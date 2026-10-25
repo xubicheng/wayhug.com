@@ -45,6 +45,10 @@ app.use((req, res) => {
 
 // 错误处理
 app.use((err, req, res, next) => {
+  // JSON 解析等客户端输入错误返回 400，而非笼统的 500
+  if (err.type === 'entity.parse.failed' || err.status === 400) {
+    return res.status(400).json({ code: 400, message: '请求体不是合法的 JSON' });
+  }
   console.error('[server] 未捕获错误:', err);
   res.status(500).json({ code: 500, message: '服务器内部错误' });
 });
