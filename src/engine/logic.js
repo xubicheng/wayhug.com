@@ -16,11 +16,21 @@ import { getCharacter, getCharacterTone } from './character.js';
 import { DIALOGUE_TEMPLATES, MOOD_MAP, guessMood, randomPick } from '../data/templates.js';
 
 /**
+ * 解析情绪：同时支持英文键（nostalgic）与中文名（感慨）
+ */
+function resolveMood(input) {
+  if (!input) return null;
+  if (DIALOGUE_TEMPLATES[input]) return input;
+  // 兼容 README/API 示例中的中文情绪名（如「感慨」→ nostalgic）
+  return Object.keys(MOOD_MAP).find((key) => MOOD_MAP[key] === input) || null;
+}
+
+/**
  * 台词生成器（规则引擎版）
  * @param {Object} params
  * @param {string} params.characterId - 角色 ID
  * @param {string} params.topic - 主题
- * @param {string} [params.mood] - 情绪（可选，不填则自动猜测）
+ * @param {string} [params.mood] - 情绪（英文键或中文名，不填则自动猜测）
  * @returns {Object} 生成结果
  */
 export function generateDialogue({ characterId, topic, mood }) {
@@ -29,8 +39,8 @@ export function generateDialogue({ characterId, topic, mood }) {
     throw new Error(`角色不存在: ${characterId}`);
   }
 
-  // 自动猜测情绪
-  const resolvedMood = mood && DIALOGUE_TEMPLATES[mood] ? mood : guessMood(topic);
+  // 解析情绪：英文键或中文名均可；未指定时自动猜测
+  const resolvedMood = resolveMood(mood) || guessMood(topic);
   const templates = DIALOGUE_TEMPLATES[resolvedMood] || DIALOGUE_TEMPLATES.thoughtful;
 
   // 选取基础模板并填入主题
