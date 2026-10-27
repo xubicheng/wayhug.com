@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S2 邮件指令站 · Wayhug IP Lab</title>
+<meta name="description" content="像 jshnp.com 一样用邮件驱动：主题写故事名，正文贴 TXT，系统自动生成动画并回复 A4 体验权证书。">
+<link rel="stylesheet" href="/lab/lab.css">
+</head>
+<body>
+<header class="nav">
+  <a class="brand" href="/lab/"><span class="mark">W</span> Wayhug IP Lab</a>
+  <nav class="nav-links">
+    <a href="/lab/">总览</a>
+    <a href="/lab/s1">S1 展厅</a>
+    <a href="/lab/s2" class="active">S2 邮件站</a>
+    <a href="/lab/s3">S3 生成器</a>
+    <a href="/lab/s4">S4 体验权</a>
+  </nav>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <span class="kicker">SOLUTION 02 · MAIL-DRIVEN STATION</span>
+    <h1>邮件指令站：<span class="hl">发一封邮件</span>，收一部动画</h1>
+    <p class="lead">
+      沿用 jshnp.com 的邮件发文思路：访客把 TXT 故事发到站点邮箱，系统轮询 IMAP、解析故事、生成动画，
+      再按你的设置自动回复 A4 证书，或进入待办由你人工答复。全程不需要访客打开网页。
+    </p>
+    <div class="tag-row">
+      <span class="tag hot">邮件即接口</span>
+      <span class="tag" data-lab="imap">IMAP</span>
+      <span class="tag" data-lab="smtp">SMTP</span>
+    </div>
+  </section>
+
+  <h2>三步完成</h2>
+  <div class="grid cols-2">
+    <div class="panel">
+      <h3>① 发送</h3>
+      <p>收件人：<b data-lab="mailbox">bc.xu@hotmail.com</b></p>
+      <p>主题：<code>[WAYHUG] 故事名</code>（标记不可省，避免与 jshnp.com 的邮件混淆）</p>
+      <p>正文：直接粘贴 TXT 故事，或附带 <code>#wayhug</code> 标记。</p>
+      <div class="btn-row">
+        <a class="btn primary" id="mail-demo" href="mailto:bc.xu@hotmail.com">打开邮件草稿</a>
+        <a class="btn ghost" href="/lab/api/demo.txt">下载示例 TXT</a>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>② 系统处理</h3>
+      <ul class="list">
+        <li><span>IMAP 轮询未读邮件（默认 120 秒）</span><span class="meta">收</span></li>
+        <li><span>按 messageId 去重，白名单可选</span><span class="meta">防重</span></li>
+        <li><span>TXT → 场景图 → CSS 动画</span><span class="meta">生成</span></li>
+        <li><span>生成台账与证书编号</span><span class="meta">签发</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>你会收到什么</h2>
+  <div class="grid cols-2">
+    <div class="panel accent">
+      <h3>自动模式（推荐上线后开启）</h3>
+      <p>回信包含：动画在线链接、A4 证书 PDF 附件、证书编号与校验地址、90 天免费体验期说明。</p>
+      <p class="small">开关：<code>LAB_AUTO_REPLY=true</code>，并配置 SMTP。</p>
+    </div>
+    <div class="panel accent">
+      <h3>人工模式（默认）</h3>
+      <p>申请进入后台待办；你在邮箱直接回复指令，系统代发答复 + 证书。</p>
+      <p class="small">适合前期：每一封回信都带着你的判断与语气。</p>
+    </div>
+  </div>
+
+  <h2>站长邮件指令</h2>
+  <table class="table">
+    <thead><tr><th>指令（邮件正文首行）</th><th>作用</th></tr></thead>
+    <tbody>
+      <tr><td><code>列表</code></td><td>返回待人工答复的体验申请清单（编号 / 作品 / 邮箱 / 日期）</td></tr>
+      <tr><td><code>回复 WH-20261027-AB12 你的答复正文</code></td><td>把答复与证书 PDF 一起发送给访客</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    指令仅对 <code>LAB_OWNER_EMAIL</code> 配置的站长邮箱生效；其他来信一律按「故事投递」处理。
+    与 jshnp.com 共用邮箱时，两个系统只处理各自标记的邮件，互不干扰。
+  </div>
+
+  <h2>已收录的作品</h2>
+  <div id="stories" class="panel"><p class="small">加载中…</p></div>
+  <div class="btn-row">
+    <a class="btn dark" href="/lab/s3">没有邮箱客户端？用网页生成器 →</a>
+    <a class="btn" href="/lab/admin">进入后台处理待办</a>
+  </div>
+
+  <footer class="foot">
+    <span>wayhug.com · S2 邮件指令站</span>
+    <span>收件箱：<a data-lab="contact" href="mailto:bc.xu@hotmail.com">bc.xu@hotmail.com</a></span>
+  </footer>
+</main>
+
+<script src="/lab/lab.js"></script>
+<script>
+(async function () {
+  const box = document.getElementById('stories');
+  try {
+    const info = await LAB.info();
+    const subject = '[WAYHUG] 小狐与月亮邮局';
+    const body = '你好，这是我的 TXT 故事，请帮我生成动画与体验权证书。\n\n（把故事正文粘贴在这里，标题写在邮件主题里）';
+    document.getElementById('mail-demo').href = LAB.mailto(info.contactEmail, subject, body);
+
+    const res = await fetch('/lab/api/stories?limit=12');
+    const { data } = await res.json();
+    if (!data.length) {
+      box.innerHTML = '<p class="small">还没有作品。发送第一封邮件，或在 S3 生成一部。</p>';
+      return;
+    }
+    box.innerHTML = `<ul class="list">${data.map(s => `
+      <li>
+        <a href="/lab/story/${encodeURIComponent(s.id)}" target="_blank">《${LAB.esc(s.title)}》</a>
+        <span class="meta">${s.stats.scenes} 幕 · ${LAB.fmtDate(s.createdAt)}</span>
+      </li>`).join('')}</ul>`;
+  } catch (e) {
+    box.innerHTML = `<p class="small">读取失败：${LAB.esc(e.message)}</p>`;
+  }
+})();
+</script>
+</body>
+</html>

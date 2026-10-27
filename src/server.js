@@ -3,11 +3,15 @@
  * 分层架构：界面层 → 服务层(API) → 引擎层 → 数据层
  */
 
+import 'dotenv/config';
 import express from 'express';
 import { fileURLToPath } from 'node:url';
 import { join, dirname } from 'node:path';
 import apiRouter from './routes/api.js';
 import webRouter from './routes/web.js';
+import labRouter from './lab/routes.js';
+import { startMailService } from './lab/mail.js';
+import { ensureDemo } from './lab/store.js';
 import { streamContentPDF } from './render/pdf.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -24,6 +28,9 @@ app.set('views', join(__dirname, '..', 'views'));
 
 // API 路由
 app.use('/api', apiRouter);
+
+// 实验场：四套 IP 落地方案（S1~S4）
+app.use('/lab', labRouter);
 
 // PDF 导出路由（交付层）
 app.get('/contents/:id/pdf', (req, res) => {
@@ -54,12 +61,19 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
+  try {
+    ensureDemo();
+  } catch (err) {
+    console.warn('[lab] 演示作品初始化失败:', err.message);
+  }
+  startMailService();
   console.log('');
   console.log('  ╔══════════════════════════════════════════╗');
   console.log('  ║      Wayhug AI Engine MVP 已启动         ║');
   console.log('  ║      MIT License © 王元会                ║');
   console.log('  ╠══════════════════════════════════════════╣');
   console.log(`  ║  本地:   http://localhost:${PORT}            ║`);
+  console.log(`  ║  实验场: http://localhost:${PORT}/lab        ║`);
   console.log(`  ║  API:    http://localhost:${PORT}/api        ║`);
   console.log(`  ║  健康:   http://localhost:${PORT}/health     ║`);
   console.log('  ╚══════════════════════════════════════════╝');

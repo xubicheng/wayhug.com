@@ -44,6 +44,98 @@ npm start
 
 启动后访问：http://localhost:3000
 
+## IP 实验场（`/lab`）：四套落地方案
+
+用一份 TXT 故事生成扁平化动物动画，并以 A4「IP 体验权」证书完成商业闭环。
+四套方案共用同一套五层架构，可独立上线、独立评估。
+
+| 方案 | 路径 | 核心能力 | 适合阶段 |
+|------|------|----------|----------|
+| S1 静态 IP 展厅 | `/lab/s1` | 预生成动画 + 邮件索取证书 | 品牌首发、零运维 |
+| S2 邮件指令站 | `/lab/s2` | 邮件投稿 TXT → 自动回动画与 PDF / 人工答复 | 复刻 jshnp.com 习惯 |
+| S3 在线生成器 | `/lab/s3` | 浏览器生成 JSON / CSS / HTML5，一键下载 | 演示、教学、获客 |
+| S4 IP 体验权门户 | `/lab/s4` | 申请表 → 编号证书 → 自动/人工答复 | 商业化主场 |
+
+### 数据流
+
+```
+TXT（唯一事实源）
+  └─ 内核层 story.js：标题 / 段落 / 场景 / 角色 / 情绪 / 指纹
+      └─ 引擎层 animate.js：JSON 场景图 + CSS 逐幕关键帧 + HTML5 自包含动画
+          ├─ 服务层 routes.js / mail.js：HTTP + SMTP + IMAP 指令
+          ├─ 业务层：体验申请 → 证书编号 → 签发 / 答复
+          └─ 交付层 certificate.js：A4 矢量证书 PDF（中文字体自动探测）
+```
+
+### 新增目录
+
+```
+src/lab/
+  config.js       环境变量与能力开关（未配置即降级）
+  story.js        TXT 解析器（内核层）
+  animate.js      JSON / CSS / HTML5 动画生成（引擎层）
+  certificate.js  A4 证书 PDF（交付层）
+  font.js         中文字体探测（ttc 用 PostScript 名）
+  store.js        data/lab.json 存储
+  mail.js         SMTP 发信 + IMAP 指令轮询
+  routes.js       /lab 路由（服务层）
+public/lab/       扁平化页面（总览 + S1~S4 + 后台）
+stories/demo.txt  演示作品《小狐与月亮邮局》
+scripts/lab-selftest.mjs  解析 / 动画 / 证书自检
+assets/fonts/     可选：放入 .ttf/.ttc 即可用于中文证书
+```
+
+### 邮件指令（与 jshnp.com 隔离）
+
+- 访客：主题 `[WAYHUG] 故事名`，正文粘贴 TXT（或附 `#wayhug`）。
+- 站长（`LAB_OWNER_EMAIL`）：正文首行 `列表` 查待办；`回复 WH-... 正文` 代发答复与证书。
+- 去重：messageId；白名单：`MAIL_IMAP_SENDERS`。
+- 与 jshnp.com 共用同一邮箱时，只处理带 `[WAYHUG]` 标记的邮件，互不抢占。
+
+### 配置
+
+复制 `.env.example` 为 `.env`。关键项：`LAB_ADMIN_TOKEN`（后台令牌）、`LAB_AUTO_REPLY`、
+`SMTP_*`（发信）、`LAB_IMAP_ENABLED` + `MAIL_IMAP_*`（S2 轮询）。
+未配置 SMTP/IMAP 时，证书仍可生成与下载，申请进入后台待办，由站长人工答复。
+
+### 自检
+
+```bash
+npm run lab:selftest
+```
+
+输出解析结果、三件套断言、证书体积与所用字体；证书样例写入 `logs/lab-cert-selftest.pdf`。
+
+### 服务器部署（systemd + Apache 反代）
+
+```ini
+# /etc/systemd/system/wayhug-lab.service
+[Unit]
+Description=Wayhug IP Lab (Express)
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/wayhug.com
+EnvironmentFile=/opt/wayhug.com/.env
+ExecStart=/usr/bin/node src/server.js
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```apache
+# 站点根目录保持静态落地页，仅把 /lab 反代给 Node
+ProxyPreserveHost On
+ProxyPass        /lab http://127.0.0.1:3001/lab
+ProxyPassReverse /lab http://127.0.0.1:3001/lab
+```
+
+中文证书：`sudo apt install -y fonts-wqy-microhei`（或把字体放入 `assets/fonts/`）。
+
 ## API 接口
 
 | 方法 | 路径 | 说明 |
