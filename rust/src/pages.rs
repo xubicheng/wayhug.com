@@ -15,6 +15,9 @@ const CSS: &str = include_str!("../assets/site.css");
 const APP_JS: &str = include_str!("../assets/app.js");
 const STUDIO_JS: &str = include_str!("../assets/studio.js");
 
+/// 浏览器标签页图标：橘色圆角方块 + 白色 W（与页头品牌标记一致）
+pub const FAVICON_SVG: &str = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='#ff7e47'/><text x='16' y='24' font-family='system-ui,sans-serif' font-size='22' font-weight='800' fill='#fff' text-anchor='middle'>W</text></svg>";
+
 /// 公安备案徽章（PNG，编译期内嵌）
 const BEIAN_BADGE_PNG: &[u8] = include_bytes!("../assets/beian_badge.png");
 /// 王元会个人商标（PNG，编译期内嵌）
@@ -52,9 +55,25 @@ fn shell(title: &str, description: &str, body: &str, js: &str, extra_js: &str) -
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="{desc}">
-<meta name="theme-color" content="#f6f5f1">
 <title>{title}</title>
+<meta name="description" content="{desc}">
+<meta name="keywords" content="王元会, 动画生成, TXT转动画, 故事动画, 文字动画, wayhug, 动物动画, IP创作">
+<meta name="author" content="王元会">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#ff7e47">
+<link rel="canonical" href="https://wayhug.com/">
+<link rel="icon" type="image/svg+xml" href="{favicon}">
+<link rel="apple-touch-icon" href="{favicon}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="王元会">
+<meta property="og:title" content="{title}">
+<meta property="og:description" content="{desc}">
+<meta property="og:url" content="https://wayhug.com/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{title}">
+<meta name="twitter:description" content="{desc}">
+<script type="application/ld+json">{jsonld}</script>
 <style>{css}</style>
 </head>
 <body>
@@ -66,6 +85,8 @@ fn shell(title: &str, description: &str, body: &str, js: &str, extra_js: &str) -
 "##,
         title = esc(title),
         desc = esc(description),
+        favicon = format!("data:image/svg+xml,{}", FAVICON_SVG.replace('#', "%23")),
+        jsonld = r#"{"@context":"https://schema.org","@type":"WebSite","name":"王元会","alternateName":"WAYHUG","url":"https://wayhug.com/","description":"把一段文字变成一部会呼吸的动画。王元会的文字到动画 IP 实验场。","inLanguage":"zh-CN","author":{"@type":"Person","name":"王元会"}}"#,
         css = CSS,
         body = body,
         js = js,
@@ -76,7 +97,7 @@ fn shell(title: &str, description: &str, body: &str, js: &str, extra_js: &str) -
 fn header() -> &'static str {
     r##"<header class="top">
   <div class="wrap">
-    <a class="brand" href="/"><span class="brand-mark">W</span>WAYHUG <small>IP LAB</small></a>
+    <a class="brand" href="/"><span class="brand-mark">W</span>王元会</a>
     <nav class="nav">
       <a href="#watch">看</a>
       <a href="#create">写</a>
@@ -457,7 +478,7 @@ pub fn landing(l: Landing<'_>) -> String {
   <div class="wrap">
     <div class="footer-grid">
       <div>
-        <h4>WAYHUG · IP LAB</h4>
+        <h4>王元会 · IP LAB</h4>
         <p>从 TXT 到动物动画，再到一张可打印、可校验的纪念证书。</p>
         <p>Rust 单二进制 · 扁平化交付 · 五层架构。</p>
       </div>

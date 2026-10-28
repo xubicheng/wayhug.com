@@ -80,6 +80,10 @@ pub fn router(state: AppState) -> Router {
         .route("/lab/story/{id}", get(redirect_watch))
         .route("/lab/cert/{id}", get(redirect_cert))
         .route("/lab/verify/{id}", get(redirect_verify))
+        .route("/favicon.ico", get(favicon))
+        .route("/favicon.svg", get(favicon))
+        .route("/robots.txt", get(robots_txt))
+        .route("/sitemap.xml", get(sitemap_xml))
         .layer(DefaultBodyLimit::max(13 * 1024 * 1024))
         .fallback(not_found)
         .with_state(state)
@@ -174,6 +178,30 @@ fn redirect(to: &str) -> Response {
 
 async fn redirect_home() -> Response {
     redirect("/")
+}
+
+/// 浏览器标签页图标（橘色 W），同时响应 /favicon.ico 与 /favicon.svg
+async fn favicon() -> Response {
+    ([(header::CONTENT_TYPE, "image/svg+xml")], crate::pages::FAVICON_SVG).into_response()
+}
+
+/// robots.txt：允许全部爬虫，指定 sitemap
+async fn robots_txt() -> Response {
+    let body = "User-agent: *\nAllow: /\nSitemap: https://wayhug.com/sitemap.xml\n";
+    ([(header::CONTENT_TYPE, "text/plain; charset=utf-8")], body).into_response()
+}
+
+/// sitemap.xml：列出核心页面，供搜索引擎与 AI 爬虫索引
+async fn sitemap_xml() -> Response {
+    let body = r#"<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://wayhug.com/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>https://wayhug.com/#watch</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://wayhug.com/#create</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://wayhug.com/#world</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://wayhug.com/license</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+</urlset>"#;
+    ([(header::CONTENT_TYPE, "application/xml; charset=utf-8")], body).into_response()
 }
 async fn redirect_mail() -> Response {
     redirect("/#mail")
