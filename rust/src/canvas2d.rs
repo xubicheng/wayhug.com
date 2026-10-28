@@ -116,15 +116,16 @@ const TEMPLATE: &str = r##"<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>__TITLE__ · 画布版</title>
 <style>
-  html,body{margin:0;padding:0;background:#fff;color:#222;
+  html,body{margin:0;padding:0;background:#fff;color:#222;box-sizing:border-box;
+    overflow-x:hidden;
     font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-  .shell{width:800px;max-width:100%;margin:0 auto;padding:14px 0 22px}
+  .shell{width:800px;max-width:100%;margin:0 auto;padding:14px 0 22px;box-sizing:border-box}
   .top{display:flex;justify-content:space-between;align-items:baseline;
     border-bottom:1px solid #ddd;padding:0 0 6px;margin-bottom:10px}
   .top b{font-size:13px;letter-spacing:.02em}
   .top span{color:#888}
   canvas{display:block;width:100%;aspect-ratio:4/3;image-rendering:pixelated;
-    background:#eee;border:1px solid #ddd}
+    box-sizing:border-box;background:#eee;border:1px solid #ddd}
   .meta{display:flex;justify-content:space-between;gap:12px;margin-top:8px;color:#666}
   .cap{min-height:20px;color:#333}
   .foot{margin-top:14px;color:#999;display:flex;justify-content:space-between}
