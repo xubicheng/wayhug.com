@@ -100,13 +100,14 @@ pub async fn send_certificate(cfg: &Config, req: &Request, extra_text: Option<&s
     let verify = format!("{}/verify/{}", cfg.site_url, req.id);
     let watch = format!("{}/watch/{}", cfg.site_url, req.story_id);
     let mut body = format!(
-        "你好，{}：\n\n这是你的 A4 纪念证书，也是《{}》的 IP 体验权凭证。\n\n证书编号：{}\n在线校验：{}\n观看动画：{}\n体验期至：{}\n\n授权范围：在线观看与演示；可下载动画页面用于个人学习、作品集与教学；免费体验授权不构成著作权转让，不得转售；商业用途请另行联系作者。\n\n如需人工答复，直接回复本邮件即可。\n\n—— Wayhug IP Lab · {}\n",
+        "你好，{}：\n\n这是你的 A4 纪念证书，也是《{}》的免费授权凭证，可直接下载打印。\n\n证书编号：{}\n在线校验：{}\n观看动画：{}\n免费授权至：{}\n\n授权方式：MIT。期内可自由使用、复制、修改、分发，也可商用；分发时请保留作者署名与许可声明。完整文本：{}/license\n\n如需人工答复，直接回复本邮件即可。\n\n—— Wayhug IP Lab · {}\n",
         req.name,
         req.story_title,
         req.id,
         verify,
         watch,
-        req.expires_at.chars().take(10).collect::<String>(),
+        cfg.free_until,
+        cfg.site_url.trim_end_matches('/'),
         cfg.site_url
     );
     if let Some(extra) = extra_text {
@@ -126,7 +127,7 @@ pub async fn send_certificate(cfg: &Config, req: &Request, extra_text: Option<&s
             Ok(m) => m,
             Err(e) => return manual(format!("访客邮箱无效: {}", e)),
         })
-        .subject(format!("[WAYHUG] 你的 IP 体验权证书 · {}", req.id));
+        .subject(format!("[WAYHUG] 你的纪念证书 · {}", req.id));
     if let Some(rt) = reply_to(cfg) {
         builder = builder.reply_to(rt);
     }
@@ -227,8 +228,11 @@ fn is_own_auto_mail(cfg: &Config, inc: &Incoming) -> bool {
     let subject = inc.subject.to_ascii_lowercase();
     let from_self =
         !cfg.smtp.user.is_empty() && inc.from_email.eq_ignore_ascii_case(&cfg.smtp.user);
-    subject.contains("ip 体验权证书")
-        || (from_self && (subject.contains("待办列表") || subject.contains("未找到申请")))
+    from_self
+        && (subject.contains("纪念证书")
+            || subject.contains("ip 体验权证书")
+            || subject.contains("待办列表")
+            || subject.contains("未找到申请"))
 }
 
 fn strip_marker(text: &str) -> String {
@@ -442,6 +446,7 @@ async fn poll_once(cfg: &Config, db: Arc<Mutex<Db>>) -> Result<PollSummary, Stri
                     &story.id,
                     "通过邮件投稿",
                     "email",
+                    &cfg.free_until,
                 );
                 guard.mark_seen(&inc.message_id);
                 if let Err(e) = save(cfg, &guard) {

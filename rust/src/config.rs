@@ -47,6 +47,10 @@ pub struct Config {
     pub owner_email: String,
     pub owner_name: String,
     pub admin_token: String,
+    /// 写作口令：公开页保留「写」入口，但只有持有口令的人能真正生成
+    pub write_token: String,
+    /// 免费授权截止日（MIT 口径），证书与页面统一引用
+    pub free_until: String,
     pub auto_reply: bool,
     pub mail_prefix: String,
     pub data_path: PathBuf,
@@ -110,6 +114,8 @@ impl Config {
             owner_email: env_any(&["WAYHUG_OWNER_EMAIL", "LAB_OWNER_EMAIL", "NOTIFY_EMAIL"]),
             owner_name: env_any(&["WAYHUG_OWNER_NAME"]).into_fallback("王元会"),
             admin_token: env_any(&["WAYHUG_ADMIN_TOKEN", "LAB_ADMIN_TOKEN"]),
+            write_token: env_any(&["WAYHUG_WRITE_TOKEN"]),
+            free_until: env_any(&["WAYHUG_FREE_UNTIL"]).into_fallback("2026-12-31"),
             auto_reply: env_bool(&["WAYHUG_AUTO_REPLY", "LAB_AUTO_REPLY"], false),
             mail_prefix: env_any(&["WAYHUG_MAIL_PREFIX", "LAB_MAIL_PREFIX"]).into_fallback("[WAYHUG]"),
             data_path: env_any(&["WAYHUG_DATA", "LAB_DATA"])
@@ -152,6 +158,14 @@ impl Config {
 
     pub fn is_owner(&self, email: &str) -> bool {
         !self.owner_email.is_empty() && self.owner_email.eq_ignore_ascii_case(email.trim())
+    }
+
+    /// 写作口令与后台令牌都可用于生成；未配置口令时后台令牌仍可用
+    pub fn write_ok(&self, token: &str) -> bool {
+        if token.is_empty() {
+            return false;
+        }
+        token == self.write_token || (!self.admin_token.is_empty() && token == self.admin_token)
     }
 }
 

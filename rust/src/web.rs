@@ -52,6 +52,7 @@ pub fn router(state: AppState) -> Router {
         .route("/dl/{id}/{kind}", get(download))
         .route("/cert/{id}", get(cert_pdf))
         .route("/verify/{id}", get(verify_page))
+        .route("/license", get(license_page))
         .route("/studio", get(studio_page))
         .route("/sketch/{id}", get(sketch_file))
         .route("/api/info", get(api_info))
@@ -105,6 +106,15 @@ fn client_ip(headers: &HeaderMap) -> String {
         .map(|s| s.trim().to_string())
         .or_else(|| headers.get("x-real-ip").and_then(|v| v.to_str().ok()).map(|s| s.trim().to_string()))
         .unwrap_or_else(|| "local".into())
+}
+
+/// 公开页保留「写」入口；真正生成需要写作口令（或后台令牌）
+fn write_ok(state: &AppState, headers: &HeaderMap) -> bool {
+    let token = headers
+        .get("x-wayhug-write")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+    state.cfg.write_ok(token) || bearer_ok(state, headers, None)
 }
 
 /// 简单的写入限流：同一 IP 10 分钟内最多 30 次
@@ -272,6 +282,10 @@ async fn verify_page(State(state): State<AppState>, Path(id): Path<String>) -> R
     axum::response::Html(pages::verify_page(&state.cfg, req, exists)).into_response()
 }
 
+async fn license_page() -> Response {
+    axum::response::Html(pages::license_page()).into_response()
+}
+
 async fn studio_page(State(state): State<AppState>) -> Response {
     axum::response::Html(pages::studio_page(&state.cfg)).into_response()
 }
@@ -308,6 +322,7 @@ async fn api_info(State(state): State<AppState>) -> Response {
         "ok": true,
         "site": state.cfg.site_url,
         "engine": "wayhug/2.0-rust",
+        "license": { "type": "MIT", "freeUntil": state.cfg.free_until, "url": "/license" },
         "capability": {
             "smtp": state.cfg.smtp_ready(),
             "imap": state.cfg.imap_ready(),
@@ -394,6 +409,9 @@ struct GenerateBody {
 }
 
 async fn api_generate(State(state): State<AppState>, headers: HeaderMap, Json(body): Json<GenerateBody>) -> Response {
+    if !write_ok(&state, &headers) {
+        return json_err(StatusCode::UNAUTHORIZED, "暂时无法生成，请稍后再试");
+    }
     if !allow_write(&state, &headers).await {
         return json_err(StatusCode::TOO_MANY_REQUESTS, "提交太频繁，请稍后再试");
     }
@@ -482,6 +500,7 @@ async fn api_experience(State(state): State<AppState>, headers: HeaderMap, Json(
             &story.id,
             body.message.trim(),
             "web",
+            &state.cfg.free_until,
         );
         if let Err(e) = store::save(&state.cfg, &db) {
             eprintln!("[web] 保存申请失败: {}", e);

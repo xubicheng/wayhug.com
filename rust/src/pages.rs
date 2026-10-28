@@ -205,13 +205,6 @@ pub fn landing(l: Landing<'_>) -> String {
 </div>"##
         )
     };
-    let prefix_enc = cfg.mail_prefix.replace('[', "%5B").replace(']', "%5D");
-    let mailto = format!(
-        "mailto:{}?subject={}%20%E6%88%91%E7%9A%84%E6%95%85%E4%BA%8B",
-        esc(&cfg.story_email),
-        prefix_enc
-    );
-
     let body = format!(
         r##"{header}
 <main>
@@ -221,7 +214,7 @@ pub fn landing(l: Landing<'_>) -> String {
         <p class="kicker">wayhug.com · Rust IP Lab</p>
         <h1>把一段文字，<br>变成一部<em>会呼吸</em>的动画。</h1>
         <p class="slogan">可以！</p>
-        <p class="lede">写下一个 TXT 故事，得到扁平化的 CSS / HTML5 动画；再领取一张 A4 纪念证书，确认这段故事的 IP 体验权。看、写、领、寄，一条动线。</p>
+        <p class="lede">看一段 TXT 长成扁平的 CSS / HTML5 动画，下载一张可打印、可校验的 A4 纪念证书。{free_until} 前按 MIT 协议免费授权；其余事宜直接写信给作者。</p>
         <div class="hero-actions">
           <a class="btn primary" href="#create">写一个故事</a>
           <a class="btn" href="#watch">看演示动画</a>
@@ -334,8 +327,8 @@ pub fn landing(l: Landing<'_>) -> String {
       <div class="section-head">
         <div>
           <span class="index">03 / 领</span>
-          <h2>A4 纪念证书 · IP 体验权</h2>
-          <p>填写称呼与邮箱，系统生成带编号的 A4 证书，并把 PDF 发送到你的邮箱。前期免费；证书可在线校验，不可转让。</p>
+          <h2>A4 纪念证书 · 免费授权打印页</h2>
+          <p>填写称呼与邮箱，即时生成带编号的 A4 证书，可自行下载打印。{free_until} 前按 MIT 协议免费授权；需要人工答复请直接写信。</p>
         </div>
       </div>
       <div class="grid-2">
@@ -362,7 +355,7 @@ pub fn landing(l: Landing<'_>) -> String {
           </div>
           <label class="check">
             <input type="checkbox" id="exp-consent" required>
-            <span>我理解这是一份免费的、非独占的体验授权：可用于观看、个人作品集与教学展示，不构成著作权转让，不转售。</span>
+            <span>我理解：{free_until} 前，作品、动画与这张证书按 MIT 协议免费授权，可自由使用、复制、修改与分发，须保留作者署名与许可声明。</span>
           </label>
           <div class="form-foot">
             <button class="btn primary" id="exp-btn" type="submit">生成并领取证书</button>
@@ -371,18 +364,18 @@ pub fn landing(l: Landing<'_>) -> String {
         </form>
         <div class="panel flat">
           <h3>这张证书包含什么</h3>
-          <p>作品名、角色、幕数、字符数、内容指纹、持有人、90 天体验期、四条授权范围、在线校验地址，以及作者签名与扁平印章。</p>
+          <p>作品名、角色、幕数、字符数、内容指纹、持有人、免费授权截止日、MIT 许可摘要、在线校验地址，以及作者署名与扁平印章。</p>
           <div class="downloads" style="margin-top:18px">
             <span class="chip"><strong>A4</strong> 矢量 PDF</span>
             <span class="chip"><strong>编号</strong> 可校验</span>
-            <span class="chip"><strong>免费</strong> 前期体验</span>
+            <span class="chip"><strong>MIT</strong> 免费授权</span>
           </div>
         </div>
       </div>
       <div class="result" id="exp-result">
         <div class="result-card">
           <h3>证书 <span id="exp-id" class="mono"></span></h3>
-          <p>持有人 <strong id="exp-name-out"></strong> · 作品《<span id="exp-title-out"></span>》 · 90 天体验期</p>
+          <p>持有人 <strong id="exp-name-out"></strong> · 作品《<span id="exp-title-out"></span>》 · 免费授权至 {free_until}</p>
           <div class="result-links">
             <a class="solid" id="cert-link" href="#">下载 A4 证书 PDF</a>
             <a id="verify-link" href="#">在线校验</a>
@@ -398,22 +391,20 @@ pub fn landing(l: Landing<'_>) -> String {
       <div class="section-head">
         <div>
           <span class="index">04 / 寄</span>
-          <h2>也可以只用邮件</h2>
-          <p>不想开网页？把 TXT 直接发到投稿邮箱，主题以 [WAYHUG] 开头。系统会像这里一样解析、生成，并自动回信。</p>
+          <h2>直接写信给作者</h2>
+          <p>授权、定制、合作，或只是聊聊故事，都可以发邮件。作者本人查看并回复，一般 1–2 天；本站不自动收信，也不会公开你的邮箱。</p>
         </div>
       </div>
       <div class="mailbox">
         <div class="panel">
-          <h3>动作一 · 自动回信</h3>
-          <p>邮件正文就是故事。收到后自动生成动画与 A4 证书，并把 PDF 作为附件回复给你。</p>
-          <a class="mail-addr" href="{mailto}">{story_email}</a>
-          <p class="mono">主题：{prefix} 我的故事</p>
+          <h3>联系邮箱</h3>
+          <a class="mail-addr" href="mailto:{contact_email}">{contact_email}</a>
+          <p>邮件里可附上作品名或证书编号，方便核对。</p>
         </div>
         <div class="panel">
-          <h3>动作二 · 作者人工答复</h3>
-          <p>直接回复任意一封自动邮件即可。作者会用自己的邮箱回信，处理授权、定制或合作问题。</p>
-          <p style="margin-top:10px">公开联系邮箱：<strong>{contact_email}</strong></p>
-          <p class="mono">人工答复不经过自动化，也不会公开你的邮箱。</p>
+          <h3>关于授权</h3>
+          <p>{free_until} 前，作品、动画与纪念证书按 MIT 协议免费授权；之后的使用、商用与定制，请来信商谈。</p>
+          <p class="mono">完整许可：wayhug.com/license</p>
         </div>
       </div>
     </div>
@@ -447,14 +438,14 @@ pub fn landing(l: Landing<'_>) -> String {
     <div class="footer-grid">
       <div>
         <h4>WAYHUG · IP LAB</h4>
-        <p>从 TXT 到动物动画，再到一张可校验的 IP 体验权证书。</p>
+        <p>从 TXT 到动物动画，再到一张可打印、可校验的纪念证书。</p>
         <p>Rust 单二进制 · 扁平化交付 · 五层架构。</p>
       </div>
       <div>
         <h4>联系</h4>
         <p><a href="mailto:{contact_email}">{contact_email}</a></p>
-        <p>投稿：<a href="{mailto}">{story_email}</a></p>
         <p>公众号：旷野馨诗</p>
+        <p>人工回复 · 一般 1–2 天</p>
       </div>
       <div>
         <h4>数据</h4>
@@ -465,7 +456,7 @@ pub fn landing(l: Landing<'_>) -> String {
     </div>
     <div class="footer-bottom">
       <span>© 2026 wayhug.com · 保留所有权利</span>
-      <span>IP 体验权为免费、非独占授权；商业使用请联系作者。</span>
+      <span>{free_until} 前按 MIT 协议免费授权 · <a href="/license">许可全文</a></span>
     </div>
   </div>
 </footer>"##,
@@ -483,23 +474,66 @@ pub fn landing(l: Landing<'_>) -> String {
         quads = quadrant_cards(),
         latest_block = latest_block,
         corpus = corpus_block(l.corpus),
-        mailto = mailto,
-        story_email = esc(&cfg.story_email),
+        free_until = esc(&cfg.free_until),
         contact_email = esc(&cfg.contact_email),
-        prefix = esc(&cfg.mail_prefix),
         engine = "wayhug/2.0-rust",
     );
 
     shell(
         "Wayhug · 把故事变成动画",
-        "提交 TXT 故事，生成扁平化 CSS / HTML5 动物动画，并领取 A4 IP 体验权证书。",
+        &format!(
+            "从 TXT 生成扁平化 CSS / HTML5 动物动画，下载可打印的 A4 纪念证书；{} 前按 MIT 协议免费授权。",
+            cfg.free_until
+        ),
         &body,
         APP_JS,
         "",
     )
 }
 
-pub fn verify_page(_cfg: &Config, req: &Request, story_exists: bool) -> String {
+pub fn license_page() -> String {
+    let body = format!(
+        r##"{header}
+<main class="wrap">
+  <div class="panel verify-card">
+    <span class="index">LICENSE</span>
+    <h1>MIT 许可</h1>
+    <p>适用对象：故事 TXT、由其生成的动画 JSON / CSS / HTML，以及 A4 纪念证书 PDF。</p>
+    <p>免费授权期至 <strong>2026-12-31</strong>（含当日）。期内可自由使用、复制、修改、合并、发布、分发、再许可与商业使用，须在各副本中保留下列版权与许可声明。</p>
+    <pre class="license-text">MIT License
+
+Copyright (c) 2026 王元会 (wayhug.com)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.</pre>
+    <div class="downloads" style="margin-top:22px">
+      <a class="btn small" href="/">返回首页</a>
+      <a class="btn small" href="mailto:bc.xu@hotmail.com">写信给作者</a>
+    </div>
+  </div>
+</main>
+<footer class="footer"><div class="wrap footer-bottom"><span>© 2026 wayhug.com</span><span>许可全文 · MIT</span></div></footer>"##,
+        header = header(),
+    );
+    shell("MIT 许可 · Wayhug", "Wayhug 故事、动画与纪念证书的 MIT 免费授权说明", &body, "", "")
+}
+
+pub fn verify_page(cfg: &Config, req: &Request, story_exists: bool) -> String {
     let body = format!(
         r##"{header}
 <main class="wrap">
@@ -515,7 +549,8 @@ pub fn verify_page(_cfg: &Config, req: &Request, story_exists: bool) -> String {
       <dt>规模</dt><dd>{scenes} 幕 · {chars} 字符</dd>
       <dt>内容指纹</dt><dd class="mono">{fp}</dd>
       <dt>签发时间</dt><dd>{created}</dd>
-      <dt>体验期至</dt><dd>{expires}</dd>
+      <dt>免费授权至</dt><dd>{free_until}</dd>
+      <dt>许可</dt><dd><a href="/license">MIT（{free_until} 前）</a></dd>
       <dt>来源</dt><dd>{source}</dd>
       <dt>证书 PDF</dt><dd><a href="/cert/{id}.pdf">/cert/{id}.pdf</a></dd>
       <dt>动画</dt><dd><a href="/watch/{story_id}">/watch/{story_id}</a>{missing}</dd>
@@ -537,12 +572,12 @@ pub fn verify_page(_cfg: &Config, req: &Request, story_exists: bool) -> String {
         chars = req.chars,
         fp = esc(&req.fingerprint),
         created = esc(&req.created_at.chars().take(19).collect::<String>()),
-        expires = esc(&req.expires_at.chars().take(10).collect::<String>()),
+        free_until = esc(&cfg.free_until),
         source = esc(&req.source),
         story_id = esc(&req.story_id),
         missing = if story_exists { "" } else { "（作品已下架）" },
     );
-    shell("证书校验 · Wayhug", "校验 Wayhug IP 体验权证书编号", &body, "", "")
+    shell("证书校验 · Wayhug", "校验 Wayhug 纪念证书编号与免费授权期", &body, "", "")
 }
 
 pub fn studio_page(cfg: &Config) -> String {

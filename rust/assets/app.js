@@ -4,6 +4,26 @@
   const $ = (s, root) => (root || document).querySelector(s);
   const $$ = (s, root) => Array.from((root || document).querySelectorAll(s));
 
+  /* 解锁键：从 #wkey=... 读入后只留在本标签页，不出现在地址栏 */
+  const WRITE_STORE = "wayhug-write";
+  (function readWriteKey() {
+    const m = (location.hash || "").match(/wkey=([^&]+)/);
+    if (!m) return;
+    try {
+      sessionStorage.setItem(WRITE_STORE, decodeURIComponent(m[1]));
+    } catch (e) {
+      /* 隐私模式下忽略 */
+    }
+    history.replaceState(null, "", location.pathname + location.search);
+  })();
+  function writeKey() {
+    try {
+      return sessionStorage.getItem(WRITE_STORE) || "";
+    } catch (e) {
+      return "";
+    }
+  }
+
   async function api(path, options) {
     const res = await fetch(path, options);
     const type = res.headers.get("content-type") || "";
@@ -100,9 +120,12 @@
       btn.disabled = true;
       status(msg, "正在解析 TXT，生成 JSON / CSS / HTML5…");
       try {
+        const headers = { "content-type": "application/json" };
+        const key = writeKey();
+        if (key) headers["x-wayhug-write"] = key;
         const data = await api("/api/generate", {
           method: "POST",
-          headers: { "content-type": "application/json" },
+          headers,
           body: JSON.stringify({ title: title.value.trim(), text: body }),
         });
         const story = data.story;
@@ -152,7 +175,7 @@
         return;
       }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        status(msg, "请填写有效邮箱，证书与动画链接会发送到这里。", "err");
+        status(msg, "请填写有效邮箱，仅用于作者人工联系。", "err");
         $("#exp-email").focus();
         return;
       }
@@ -182,9 +205,9 @@
         $("#watch-link").href = "/watch/" + req.storyId;
         const mail = data.mail || {};
         if (mail.ok) {
-          status(msg, "证书已发送到 " + req.email + "，同时可在此直接下载。", "ok");
+          status(msg, "证书已生成，同时已发送到 " + req.email + "；也可在此直接下载打印。", "ok");
         } else {
-          status(msg, "证书已生成。邮件自动发送未启用，作者会人工答复你。", "ok");
+          status(msg, "证书已生成，可直接下载打印；如需人工答复，请写信给作者。", "ok");
         }
         result.classList.add("show");
         result.scrollIntoView({ behavior: "smooth", block: "nearest" });

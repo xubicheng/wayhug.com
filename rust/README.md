@@ -65,6 +65,8 @@ cargo test
 | `WAYHUG_STORY_EMAIL` | 投稿/自动回信地址 | 发件邮箱或联系邮箱 |
 | `WAYHUG_OWNER_NAME` | 证书授权人署名 | `王元会` |
 | `WAYHUG_ADMIN_TOKEN` | `/studio` 与后台 API 令牌 | 空（后台不可用） |
+| `WAYHUG_WRITE_TOKEN` | 公开页「写」的写作口令（需在 URL 加 `#wkey=...` 解锁） | 空（仅后台令牌可用） |
+| `WAYHUG_FREE_UNTIL` | MIT 免费授权截止日 | `2026-12-31` |
 | `WAYHUG_AUTO_REPLY` | 是否自动回信 | `false`（转人工） |
 | `WAYHUG_MAIL_PREFIX` | 邮件主题前缀 | `[WAYHUG]` |
 | `WAYHUG_DATA` | 数据文件 | `data/wayhug.json` |
@@ -136,24 +138,25 @@ wayhug ingest-dir sketches/
 | GET | `/api/worldview` | 四相世界观 JSON |
 | GET | `/api/corpus` | 文稿集合统计（四相占比、最新文稿；首页「文稿校准」同源） |
 | GET | `/api/verify/{id}` | 证书校验 |
-| POST | `/api/generate` | `{title?, text}` → 生成动画 |
+| POST | `/api/generate` | `{title?, text}` → 生成动画（需写作口令或后台令牌） |
 | POST | `/api/experience` | `{name,email,storyId?,message?}` → 领取证书 |
+| GET | `/license` | MIT 许可全文（免费期至 `WAYHUG_FREE_UNTIL`） |
 | GET | `/api/admin/requests` | 申请列表（令牌） |
 | POST | `/api/admin/reply` | `{id,text}` 人工答复（令牌） |
 | POST | `/api/admin/poll` | 立即轮询 IMAP（令牌） |
 | GET/POST | `/api/admin/sketches` | 原画列表 / 上传（令牌） |
 
-令牌可放在请求头 `x-wayhug-token` 或查询参数 `?token=`。
+令牌可放在请求头 `x-wayhug-token` 或查询参数 `?token=`；写作口令放在请求头 `x-wayhug-write`。
 
-写入限流：同一 IP 10 分钟最多 30 次。
+写入限流：同一 IP 10 分钟最多 30 次（仍需写作口令）。
 
 ---
 
 ## 7. 邮件
 
-- **发信**：SMTP；证书 PDF 作为附件；未配置或失败时自动降级为「人工答复」，不丢单。
-- **收信**：IMAP 只读轮询；不改 `\Seen`、不删除，可与 jshnp.com 共用同一邮箱；按 `Message-ID` 去重。
-- **投稿**：主题含 `[WAYHUG]`，正文即故事；自动解析、生成作品、建申请单。
+- **发信**：SMTP；证书 PDF 作为附件；未配置或失败时自动降级为「人工答复」，不丢单。生产默认 `WAYHUG_AUTO_REPLY=false`，访客在网页即时下载，人工联系走邮箱。
+- **收信**：IMAP 只读轮询；不改 `\Seen`、不删除，可与 jshnp.com 共用同一邮箱；按 `Message-ID` 去重。当前生产关闭，站长人工看信。
+- **投稿**：默认由站长通过写作口令生成或 `ingest-stories` 导入；邮件投稿链路保留，启用 IMAP 后可用。
 - **人工**：站长在 `/studio` 填写答复，系统回信并把状态改为「已人工答复」。
 
 ---

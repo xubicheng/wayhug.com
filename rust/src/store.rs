@@ -81,6 +81,7 @@ pub fn create_request(
     story_id: &str,
     message: &str,
     source: &str,
+    expires_at: &str,
 ) -> Request {
     let story_title = story.map(|s| s.title.clone()).unwrap_or_else(|| "小狐与月亮邮局".into());
     let cast_names: Vec<String> = story
@@ -90,7 +91,11 @@ pub fn create_request(
         .map(|s| (s.scenes.len(), s.stats.chars, s.fingerprint.clone()))
         .unwrap_or_else(|| (8, 451, "demo-fingerprint".into()));
     let created = now_iso();
-    let expires = (Utc::now() + Duration::days(90)).to_rfc3339_opts(SecondsFormat::Secs, true);
+    let expires = if expires_at.trim().is_empty() {
+        (Utc::now() + Duration::days(90)).to_rfc3339_opts(SecondsFormat::Secs, true)
+    } else {
+        expires_at.trim().to_string()
+    };
 
     let req = Request {
         id: new_request_id(db),
