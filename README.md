@@ -13,6 +13,7 @@
 
 公众页面一页式、扁平化；申请、原画喂养、邮件轮询等复杂度收在 `/studio`。
 世界观采用四分法（四相 × 四属性），记录在 [`rust/docs/worldview.md`](rust/docs/worldview.md)。
+图形与动画的升级路线（参考 Blender 的思路、许可证边界与工作量）见 [`rust/docs/graphics-roadmap.md`](rust/docs/graphics-roadmap.md)。
 
 ```bash
 cd rust
