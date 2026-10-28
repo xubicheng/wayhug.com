@@ -160,8 +160,13 @@ impl Config {
         !self.owner_email.is_empty() && self.owner_email.eq_ignore_ascii_case(email.trim())
     }
 
-    /// 写作口令与后台令牌都可用于生成；未配置口令时后台令牌仍可用
+    /// 写作口令与后台令牌都可用于生成
+    /// —— 未配置 write_token 时默认放行（公开演示站点的默认行为）
+    /// —— 配置了 write_token 后启用保护，需携带口令或 admin_token
     pub fn write_ok(&self, token: &str) -> bool {
+        if self.write_token.is_empty() {
+            return true;
+        }
         if token.is_empty() {
             return false;
         }
