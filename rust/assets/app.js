@@ -21,8 +21,10 @@
     } catch (e) {
       /* 隐私模式下忽略 */
     }
+    const host = location.hostname;
+    const scope = host === "wayhug.com" || host.endsWith(".wayhug.com") ? "; domain=.wayhug.com" : "";
     document.cookie =
-      WRITE_COOKIE + "=" + encodeURIComponent(key) + "; path=/; max-age=31536000; samesite=lax";
+      WRITE_COOKIE + "=" + encodeURIComponent(key) + "; path=/; max-age=31536000; samesite=lax" + scope;
     history.replaceState(null, "", location.pathname);
   })();
   function writeKey() {

@@ -146,7 +146,7 @@ wayhug ingest-dir sketches/
 | POST | `/api/admin/poll` | 立即轮询 IMAP（令牌） |
 | GET/POST | `/api/admin/sketches` | 原画列表 / 上传（令牌） |
 
-令牌可放在请求头 `x-wayhug-token` 或查询参数 `?token=`；写作口令放在请求头 `x-wayhug-write`，也可用 `wayhug_write` cookie（访问 `/?wkey=口令` 后由页面写入，有效期一年）。
+令牌可放在请求头 `x-wayhug-token` 或查询参数 `?token=`；写作口令放在请求头 `x-wayhug-write`，也可用 `wayhug_write` cookie（访问 `/?wkey=口令` 后由页面写入，作用域 `.wayhug.com`，有效期一年）。
 页面 HTML 一律 `Cache-Control: no-store`，避免浏览器缓存旧的内联脚本导致口令失效。
 
 写入限流：同一 IP 10 分钟最多 30 次（仍需写作口令）。
