@@ -432,14 +432,19 @@ pub fn build_html(story: &Story, opt: HtmlOptions<'_>) -> String {
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2, user-scalable=yes">
 <title>{title} · Wayhug 动画</title>
 <style>
+/* 移动端适配：舞台 4:3 等比缩放，允许用户缩放 */
+.stage-outer {{ max-width: 800px; margin: 0 auto; padding: 8px; box-sizing: border-box; }}
+.stage-outer .stage {{ width: 100%; aspect-ratio: 4 / 3; }}
+html, body {{ margin: 0; padding: 0; background: #f5f5f7; }}
 {css}
 {still}
 </style>
 </head>
 <body>
+<div class="stage-outer">
 <div class="stage">
   <div class="hud">
     <span class="chip">WAYHUG · TXT → 动画</span>
@@ -449,6 +454,7 @@ pub fn build_html(story: &Story, opt: HtmlOptions<'_>) -> String {
   {scenes}
   <div class="caption">《{title}》 · {n} 幕 · 四相四属性 · 指纹 {fp}</div>
   <div class="progress"><span style="background:{accent}"></span></div>
+</div>
 </div>
 </body>
 </html>

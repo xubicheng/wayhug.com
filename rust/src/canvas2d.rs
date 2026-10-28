@@ -153,7 +153,7 @@ const TEMPLATE: &str = r##"<!doctype html>
 <html lang="zh">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2, user-scalable=yes">
 <title>__TITLE__ · 画布版</title>
 <style>
   html,body{margin:0;padding:0;background:#fff;color:#222;box-sizing:border-box;

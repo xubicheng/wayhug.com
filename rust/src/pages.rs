@@ -54,7 +54,7 @@ fn shell(title: &str, description: &str, body: &str, js: &str, extra_js: &str) -
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2, user-scalable=yes">
 <title>{title}</title>
 <meta name="description" content="{desc}">
 <meta name="keywords" content="王元会, 动画生成, TXT转动画, 故事动画, 文字动画, wayhug, 动物动画, IP创作">
@@ -106,7 +106,17 @@ fn header() -> &'static str {
       <a href="#world">四相</a>
     </nav>
   </div>
-</header>"##
+</header>
+<nav class="nav-mobile" aria-label="移动端导航">
+  <ul>
+    <li><a href="#watch"><span class="tab-num">01</span>看</a></li>
+    <li><a href="#create"><span class="tab-num">02</span>写</a></li>
+    <li><a href="#experience"><span class="tab-num">03</span>领</a></li>
+    <li><a href="#mail"><span class="tab-num">04</span>寄</a></li>
+    <li><a href="#world"><span class="tab-num">05</span>四相</a></li>
+  </ul>
+</nav>
+<div class="orient-tip" id="orient-tip">横屏观看动画效果更佳</div>"##
 }
 
 fn quadrant_cards() -> String {
@@ -323,7 +333,7 @@ pub fn landing(l: Landing<'_>) -> String {
         <form class="form" id="create-form">
           <div class="field">
             <label for="story-title">标题（可留空，自动提取）</label>
-            <input class="input" id="story-title" name="title" maxlength="60" placeholder="例如：小狐与月亮邮局">
+            <input class="input" id="story-title" name="title" maxlength="60" inputmode="text" placeholder="例如：小狐与月亮邮局">
           </div>
           <div class="field">
             <label for="story-text">故事正文</label>

@@ -197,10 +197,12 @@ img { max-width: 100%; display: block; }
   border-radius: var(--radius);
   overflow: hidden;
   background: #f5f5f7;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 4 / 3;            /* 动画固定 800×600，等比缩放不变形 */
+  max-width: 800px;
+  margin: 0 auto;
   box-shadow: 12px 12px 0 0 rgba(31, 35, 40, .08);
 }
-.stage-frame iframe { width: 100%; height: 100%; border: 0; display: block; background: #f5f5f7; }
+.stage-frame iframe { width: 100%; height: 100%; border: 0; display: block; background: #f5f5f7; touch-action: manipulation; user-select: none; }
 .stage-meta {
   display: flex;
   align-items: center;
@@ -385,7 +387,7 @@ img { max-width: 100%; display: block; }
 }
 .result-links a:hover { background: var(--accent-soft); }
 .result-links a.solid { background: var(--ink); color: #fff; }
-.stage-frame.inline { aspect-ratio: 16 / 10; margin-top: 18px; }
+.stage-frame.inline { aspect-ratio: 4 / 3; margin-top: 18px; }
 
 /* ---------- 下载行 ---------- */
 .downloads { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
@@ -509,19 +511,89 @@ img { max-width: 100%; display: block; }
   .footer-grid { grid-template-columns: 1fr; gap: 22px; }
 }
 @media (max-width: 640px) {
-  body { font-size: 15px; }
+  body { font-size: 15px; padding-bottom: 64px; } /* 预留底部 Tab 栏高度 */
   .wrap { padding: 0 18px; width: 100%; }
   .top .wrap { height: 58px; }
-  .nav { gap: 14px; }
-  .nav a { font-size: 13px; }
+  .nav { display: none; }                 /* 桌面导航在移动端隐藏，改用底部 Tab */
   .hero { padding: 40px 0 26px; }
   .section { padding: 48px 0; }
   .form-row { grid-template-columns: 1fr; }
-  .stage-frame { aspect-ratio: 4 / 5; box-shadow: 6px 6px 0 0 rgba(31,35,40,.08); min-width: 0; }
+  .stage-frame { aspect-ratio: 4 / 3; box-shadow: 6px 6px 0 0 rgba(31,35,40,.08); min-width: 0; }
   .panel { padding: 20px 18px; }
   .world-grid { grid-template-columns: 1fr; }
   .kv { grid-template-columns: 1fr; }
   .kv dt { margin-top: 8px; }
   .hero-grid > *, .grid-2 > *, .grid-3 > *, .section-head > * { min-width: 0; }
   .stage-meta { font-size: 11.5px; }
+  /* 表单提交按钮通栏放大，方便触控 */
+  .form-foot .btn.primary { width: 100%; justify-content: center; }
+  /* 四相 SVG 自适应 */
+  .quad .realm-art { max-width: 100%; }
+  .quad h3 { font-size: 16px; }
+  .quad p { font-size: 14px; }
+}
+
+/* ---------- 移动端底部 Tab 栏（看/写/领/寄/四相） ---------- */
+.nav-mobile {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 100;
+  background: var(--paper);
+  border-top: 1px solid var(--line);
+  box-shadow: 0 -2px 12px rgba(31,35,40,.06);
+}
+.nav-mobile ul {
+  display: flex;
+  list-style: none;
+  margin: 0; padding: 0;
+}
+.nav-mobile li { flex: 1; }
+.nav-mobile a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 56px;          /* ≥44px 触控规范 */
+  padding: 6px 0 calc(6px + env(safe-area-inset-bottom, 0px));
+  text-decoration: none;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  border-bottom: 3px solid transparent;
+}
+.nav-mobile a .tab-num {
+  font-family: var(--mono);
+  font-size: 10px;
+  opacity: .7;
+}
+.nav-mobile a:active,
+.nav-mobile a:focus-visible {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+  background: var(--accent-soft);
+}
+@media (max-width: 768px) {
+  .nav-mobile { display: block; }
+}
+
+/* ---------- 竖屏观看提示 ---------- */
+.orient-tip {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(31,35,40,.88);
+  color: #fff;
+  padding: 14px 22px;
+  border-radius: 12px;
+  font-size: 14px;
+  z-index: 200;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .3s;
+}
+.orient-tip.show { opacity: 1; }
+@media (orientation: landscape) {
+  .orient-tip { display: none; }
 }

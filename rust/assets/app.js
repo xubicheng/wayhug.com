@@ -4,6 +4,47 @@
   const $ = (s, root) => (root || document).querySelector(s);
   const $$ = (s, root) => Array.from((root || document).querySelectorAll(s));
 
+  /* ---------- 移动端：竖屏提示 + 软键盘兼容 ---------- */
+  (function mobileAdapt() {
+    // 竖屏时短暂提示横屏观看，3.5s 后消失，不遮挡画布
+    const tip = document.getElementById("orient-tip");
+    if (tip) {
+      const checkOrient = () => {
+        if (window.innerHeight > window.innerWidth) {
+          tip.classList.add("show");
+          clearTimeout(window.__orientTimer);
+          window.__orientTimer = setTimeout(() => tip.classList.remove("show"), 3500);
+        } else {
+          tip.classList.remove("show");
+        }
+      };
+      checkOrient();
+      window.addEventListener("resize", checkOrient);
+      window.addEventListener("orientationchange", checkOrient);
+    }
+
+    // 软键盘弹出时：把当前聚焦的输入框滚动到可见区域，
+    // 解决微信/内置浏览器键盘收起后页面高度不回弹的问题
+    const inputs = document.querySelectorAll("input, textarea, select");
+    inputs.forEach((el) => {
+      el.addEventListener("focus", () => {
+        setTimeout(() => el.scrollIntoView({ block: "center", behavior: "smooth" }), 300);
+      });
+    });
+
+    // 微信/内置浏览器：监听视口高度变化，键盘收起时强制重排
+    let lastVh = window.innerHeight;
+    window.addEventListener("resize", () => {
+      const vh = window.innerHeight;
+      if (vh > lastVh) {
+        // 键盘收起，强制重排避免留白
+        document.body.style.minHeight = vh + "px";
+        setTimeout(() => (document.body.style.minHeight = ""), 100);
+      }
+      lastVh = vh;
+    });
+  })();
+
   /* 解锁键：从 #wkey=... 或 ?wkey=... 读入，存本标签页 + cookie，地址栏即时清除 */
   const WRITE_STORE = "wayhug-write";
   const WRITE_COOKIE = "wayhug_write";
