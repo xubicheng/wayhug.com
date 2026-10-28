@@ -65,7 +65,7 @@ cargo test
 | `WAYHUG_STORY_EMAIL` | 投稿/自动回信地址 | 发件邮箱或联系邮箱 |
 | `WAYHUG_OWNER_NAME` | 证书授权人署名 | `王元会` |
 | `WAYHUG_ADMIN_TOKEN` | `/studio` 与后台 API 令牌 | 空（后台不可用） |
-| `WAYHUG_WRITE_TOKEN` | 公开页「写」的写作口令（需在 URL 加 `#wkey=...` 解锁） | 空（仅后台令牌可用） |
+| `WAYHUG_WRITE_TOKEN` | 公开页「写」的写作口令；访问 `/?wkey=...`（或 `/#wkey=...`）即解锁 | 空（仅后台令牌可用） |
 | `WAYHUG_FREE_UNTIL` | MIT 免费授权截止日 | `2026-12-31` |
 | `WAYHUG_AUTO_REPLY` | 是否自动回信 | `false`（转人工） |
 | `WAYHUG_MAIL_PREFIX` | 邮件主题前缀 | `[WAYHUG]` |
@@ -146,7 +146,8 @@ wayhug ingest-dir sketches/
 | POST | `/api/admin/poll` | 立即轮询 IMAP（令牌） |
 | GET/POST | `/api/admin/sketches` | 原画列表 / 上传（令牌） |
 
-令牌可放在请求头 `x-wayhug-token` 或查询参数 `?token=`；写作口令放在请求头 `x-wayhug-write`。
+令牌可放在请求头 `x-wayhug-token` 或查询参数 `?token=`；写作口令放在请求头 `x-wayhug-write`，也可用 `wayhug_write` cookie（访问 `/?wkey=口令` 后由页面写入，有效期一年）。
+页面 HTML 一律 `Cache-Control: no-store`，避免浏览器缓存旧的内联脚本导致口令失效。
 
 写入限流：同一 IP 10 分钟最多 30 次（仍需写作口令）。
 

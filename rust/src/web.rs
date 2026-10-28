@@ -108,13 +108,44 @@ fn client_ip(headers: &HeaderMap) -> String {
         .unwrap_or_else(|| "local".into())
 }
 
+fn cookie_value(headers: &HeaderMap, name: &str) -> String {
+    headers
+        .get(header::COOKIE)
+        .and_then(|v| v.to_str().ok())
+        .and_then(|raw| {
+            raw.split(';')
+                .filter_map(|kv| kv.trim().split_once('='))
+                .find(|(k, _)| k.trim() == name)
+                .map(|(_, v)| v.trim().to_string())
+        })
+        .unwrap_or_default()
+}
+
 /// 公开页保留「写」入口；真正生成需要写作口令（或后台令牌）
+/// 口令可来自请求头，也可来自解锁后写入的 cookie，页面刷新/新开标签仍有效
 fn write_ok(state: &AppState, headers: &HeaderMap) -> bool {
-    let token = headers
+    let header_token = headers
         .get("x-wayhug-write")
         .and_then(|v| v.to_str().ok())
         .unwrap_or("");
-    state.cfg.write_ok(token) || bearer_ok(state, headers, None)
+    let token = if header_token.trim().is_empty() {
+        cookie_value(headers, "wayhug_write")
+    } else {
+        header_token.trim().to_string()
+    };
+    state.cfg.write_ok(&token) || bearer_ok(state, headers, None)
+}
+
+/// HTML 页面统一不缓存，避免浏览器拿着旧的内联脚本继续用
+fn html_page(html: String) -> Response {
+    (
+        [
+            (header::CONTENT_TYPE, "text/html; charset=utf-8"),
+            (header::CACHE_CONTROL, "no-store"),
+        ],
+        html,
+    )
+        .into_response()
 }
 
 /// 简单的写入限流：同一 IP 10 分钟内最多 30 次
@@ -163,7 +194,7 @@ async fn redirect_verify(Path(id): Path<String>) -> Response {
 async fn not_found() -> Response {
     (
         StatusCode::NOT_FOUND,
-        axum::response::Html(pages::error_page(404, "页面不存在")),
+        html_page(pages::error_page(404, "页面不存在")),
     )
         .into_response()
 }
@@ -173,7 +204,7 @@ async fn not_found() -> Response {
 async fn root(State(state): State<AppState>) -> Response {
     let db = state.db.lock().await;
     let Some(demo) = db.find_story("demo").or_else(|| db.stories.first()) else {
-        return (StatusCode::INTERNAL_SERVER_ERROR, axum::response::Html(pages::error_page(500, "演示作品尚未生成"))).into_response();
+        return (StatusCode::INTERNAL_SERVER_ERROR, html_page(pages::error_page(500, "演示作品尚未生成"))).into_response();
     };
     let mut latest: Vec<crate::model::Story> = db.stories.clone();
     latest.sort_by(|a, b| b.created_at.cmp(&a.created_at));
@@ -188,7 +219,7 @@ async fn root(State(state): State<AppState>) -> Response {
         requests: db.requests.len(),
         sketches: db.sketches.len(),
     });
-    axum::response::Html(html).into_response()
+    html_page(html)
 }
 
 #[derive(Deserialize, Default)]
@@ -200,7 +231,7 @@ struct WatchQuery {
 async fn watch(State(state): State<AppState>, Path(id): Path<String>, Query(q): Query<WatchQuery>) -> Response {
     let db = state.db.lock().await;
     let Some(story) = db.find_story(&id) else {
-        return (StatusCode::NOT_FOUND, axum::response::Html(pages::error_page(404, "作品不存在"))).into_response();
+        return (StatusCode::NOT_FOUND, html_page(pages::error_page(404, "作品不存在"))).into_response();
     };
     let html = build_html(
         story,
@@ -224,7 +255,7 @@ async fn watch(State(state): State<AppState>, Path(id): Path<String>, Query(q): 
 async fn download(State(state): State<AppState>, Path((id, kind)): Path<(String, String)>) -> Response {
     let db = state.db.lock().await;
     let Some(story) = db.find_story(&id) else {
-        return (StatusCode::NOT_FOUND, axum::response::Html(pages::error_page(404, "作品不存在"))).into_response();
+        return (StatusCode::NOT_FOUND, html_page(pages::error_page(404, "作品不存在"))).into_response();
     };
     let (body, mime, ext) = match kind.as_str() {
         "html" => (build_html(story, HtmlOptions { cta_url: Some("/#experience"), ..Default::default() }), "text/html; charset=utf-8", "html"),
@@ -254,7 +285,7 @@ async fn cert_pdf(State(state): State<AppState>, Path(id): Path<String>) -> Resp
     let (record, story) = {
         let db = state.db.lock().await;
         let Some(req) = db.find_request(&id).cloned() else {
-            return (StatusCode::NOT_FOUND, axum::response::Html(pages::error_page(404, "证书不存在"))).into_response();
+            return (StatusCode::NOT_FOUND, html_page(pages::error_page(404, "证书不存在"))).into_response();
         };
         let story = db.find_story(&req.story_id).cloned();
         (req, story)
@@ -276,18 +307,18 @@ async fn cert_pdf(State(state): State<AppState>, Path(id): Path<String>) -> Resp
 async fn verify_page(State(state): State<AppState>, Path(id): Path<String>) -> Response {
     let db = state.db.lock().await;
     let Some(req) = db.find_request(&id) else {
-        return (StatusCode::NOT_FOUND, axum::response::Html(pages::error_page(404, "未找到该证书编号"))).into_response();
+        return (StatusCode::NOT_FOUND, html_page(pages::error_page(404, "未找到该证书编号"))).into_response();
     };
     let exists = db.find_story(&req.story_id).is_some();
-    axum::response::Html(pages::verify_page(&state.cfg, req, exists)).into_response()
+    html_page(pages::verify_page(&state.cfg, req, exists))
 }
 
 async fn license_page() -> Response {
-    axum::response::Html(pages::license_page()).into_response()
+    html_page(pages::license_page())
 }
 
 async fn studio_page(State(state): State<AppState>) -> Response {
-    axum::response::Html(pages::studio_page(&state.cfg)).into_response()
+    html_page(pages::studio_page(&state.cfg))
 }
 
 async fn sketch_file(State(state): State<AppState>, Path(id): Path<String>, Query(q): Query<TokenQuery>, headers: HeaderMap) -> Response {

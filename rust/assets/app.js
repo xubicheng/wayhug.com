@@ -4,23 +4,40 @@
   const $ = (s, root) => (root || document).querySelector(s);
   const $$ = (s, root) => Array.from((root || document).querySelectorAll(s));
 
-  /* 解锁键：从 #wkey=... 读入后只留在本标签页，不出现在地址栏 */
+  /* 解锁键：从 #wkey=... 或 ?wkey=... 读入，存本标签页 + cookie，地址栏即时清除 */
   const WRITE_STORE = "wayhug-write";
+  const WRITE_COOKIE = "wayhug_write";
   (function readWriteKey() {
-    const m = (location.hash || "").match(/wkey=([^&]+)/);
+    const m = (location.hash + location.search || "").match(/wkey=([^&]+)/);
     if (!m) return;
+    let key = m[1];
     try {
-      sessionStorage.setItem(WRITE_STORE, decodeURIComponent(m[1]));
+      key = decodeURIComponent(key);
+    } catch (e) {
+      /* 保留原样 */
+    }
+    try {
+      sessionStorage.setItem(WRITE_STORE, key);
     } catch (e) {
       /* 隐私模式下忽略 */
     }
-    history.replaceState(null, "", location.pathname + location.search);
+    document.cookie =
+      WRITE_COOKIE + "=" + encodeURIComponent(key) + "; path=/; max-age=31536000; samesite=lax";
+    history.replaceState(null, "", location.pathname);
   })();
   function writeKey() {
     try {
-      return sessionStorage.getItem(WRITE_STORE) || "";
+      const key = sessionStorage.getItem(WRITE_STORE);
+      if (key) return key;
     } catch (e) {
-      return "";
+      /* 继续读 cookie */
+    }
+    const m = ("; " + document.cookie).match(new RegExp("(?:^|; )" + WRITE_COOKIE + "=([^;]*)"));
+    if (!m) return "";
+    try {
+      return decodeURIComponent(m[1]);
+    } catch (e) {
+      return m[1];
     }
   }
 
@@ -93,6 +110,8 @@
     const msg = $("#create-status");
     const result = $("#create-result");
     const preview = $("#create-preview");
+
+    if (writeKey()) status(msg, "已解锁，可直接生成。", "ok");
 
     const example = $("#example-btn");
     if (example) {
