@@ -15,6 +15,36 @@ const CSS: &str = include_str!("../assets/site.css");
 const APP_JS: &str = include_str!("../assets/app.js");
 const STUDIO_JS: &str = include_str!("../assets/studio.js");
 
+/// 公安备案徽章（PNG，编译期内嵌）
+const BEIAN_BADGE_PNG: &[u8] = include_bytes!("../assets/beian_badge.png");
+/// 王元会个人商标（PNG，编译期内嵌）
+const TRADEMARK_PNG: &[u8] = include_bytes!("../assets/trademark.png");
+
+/// 简易 base64 编码（用于把内嵌 PNG 转成 data URI，避免引入额外依赖）
+fn base64_encode(data: &[u8]) -> String {
+    const TABLE: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut out = String::with_capacity((data.len() + 2) / 3 * 4);
+    for chunk in data.chunks(3) {
+        let b0 = chunk[0] as u32;
+        let b1 = chunk.get(1).map(|&b| b as u32).unwrap_or(0);
+        let b2 = chunk.get(2).map(|&b| b as u32).unwrap_or(0);
+        let n = (b0 << 16) | (b1 << 8) | b2;
+        out.push(TABLE[((n >> 18) & 0x3f) as usize] as char);
+        out.push(TABLE[((n >> 12) & 0x3f) as usize] as char);
+        if chunk.len() > 1 {
+            out.push(TABLE[((n >> 6) & 0x3f) as usize] as char);
+        } else {
+            out.push('=');
+        }
+        if chunk.len() > 2 {
+            out.push(TABLE[(n & 0x3f) as usize] as char);
+        } else {
+            out.push('=');
+        }
+    }
+    out
+}
+
 fn shell(title: &str, description: &str, body: &str, js: &str, extra_js: &str) -> String {
     format!(
         r##"<!DOCTYPE html>
@@ -445,8 +475,17 @@ pub fn landing(l: Landing<'_>) -> String {
       </div>
     </div>
     <div class="footer-bottom">
-      <span>© 2026 wayhug.com · 保留所有权利</span>
+      <span>© 2026 wayhug.com · 王元会</span>
       <span>{free_until} 前按 MIT 协议免费授权 · <a href="/license">许可全文</a></span>
+    </div>
+    <div class="footer-beian">
+      <p class="beian-tm"><img src="data:image/png;base64,{tm_b64}" alt="王元会商标" width="120"></p>
+      <p class="beian-line">
+        <a href="https://beian.mps.gov.cn/#/query/webSearch?code=32010502011359" rel="noreferrer" target="_blank">
+          <img src="data:image/png;base64,{badge_b64}" alt="" width="14" height="14" class="beian-icon">苏公网安备32010502011359号
+        </a>
+      </p>
+      <p class="beian-line"><a href="http://beian.miit.gov.cn/" rel="noreferrer" target="_blank">苏ICP备17031763号-6</a></p>
     </div>
   </div>
 </footer>"##,
@@ -467,6 +506,8 @@ pub fn landing(l: Landing<'_>) -> String {
         free_until = esc(&cfg.free_until),
         contact_email = esc(&cfg.contact_email),
         engine = "wayhug/2.0-rust",
+        tm_b64 = base64_encode(TRADEMARK_PNG),
+        badge_b64 = base64_encode(BEIAN_BADGE_PNG),
     );
 
     shell(
