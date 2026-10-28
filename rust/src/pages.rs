@@ -470,7 +470,7 @@ pub fn landing(l: Landing<'_>) -> String {
     );
 
     shell(
-        "Wayhug · 把故事变成动画",
+        "Wayhug · 可以！",
         &format!(
             "从 TXT 生成扁平化 CSS / HTML5 动物动画，下载可打印的 A4 纪念证书；{} 前按 MIT 协议免费授权。",
             cfg.free_until
