@@ -1,0 +1,30 @@
+[package]
+name = "wayhug"
+version = "1.0.0"
+edition = "2021"
+description = "wayhug.com — 故事到动物的 IP 实验场（Rust 单二进制）"
+license = "UNLICENSED"
+publish = false
+
+[dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "signal", "fs"] }
+axum = { version = "0.8", features = ["multipart"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+sha2 = "0.10"
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+dotenvy = "0.15"
+printpdf = { version = "0.7", features = ["font_subsetting"] }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+lettre = { version = "0.11", default-features = false, features = ["builder", "smtp-transport", "tokio1-rustls-tls", "hostname"] }
+async-imap = "0.11"
+async-native-tls = "0.5"
+mailparse = "0.15"
+futures-util = "0.3"
+tokio-util = { version = "0.7", features = ["compat"] }
+tower = { version = "0.5", features = ["util"] }
+
+# 低内存服务器（2 vCPU / 2GB RAM）友好：单 codegen 单元，避免并行链接峰值的 OOM
+[profile.release]
+codegen-units = 1
+strip = "symbols"

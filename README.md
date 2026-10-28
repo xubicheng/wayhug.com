@@ -3,6 +3,26 @@
 > wayhug.com 自有 AI 引擎 — Minimum Viable Product
 > 服务内容：博客 / 个人空间 · 记录文化艺术学习快乐的点点滴滴
 
+## Rust 版（四合一，推荐）
+
+`rust/` 是单二进制重写版：把原来 `/lab` 下的四套实验方案（静态 IP 展厅 / 邮件指令站 / TXT→动画生成器 / IP 体验权门户）合并为同一条公众动线——
+
+```
+看（展厅） → 写（生成器） → 领（体验权证书） → 寄（邮件投稿）
+```
+
+公众页面一页式、扁平化；申请、原画喂养、邮件轮询等复杂度收在 `/studio`。
+世界观采用四分法（四相 × 四属性），记录在 [`rust/docs/worldview.md`](rust/docs/worldview.md)。
+
+```bash
+cd rust
+cargo run --release     # http://127.0.0.1:3001
+cargo test              # 19 项：解析 / 动画 / PDF / 世界观 / 文稿统计 / 原画 / 内容边界
+```
+
+部署、环境变量、API 与命令行说明见 [`rust/README.md`](rust/README.md)。
+下方内容为 Node 版历史实现与 `/lab` 对照页，可继续并行运行。
+
 ## 架构设计（分层三角形）
 
 ```
