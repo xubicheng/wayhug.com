@@ -163,6 +163,17 @@
         $("#dl-html").href = "/dl/" + story.id + "/html";
         $("#dl-css").href = "/dl/" + story.id + "/css";
         $("#dl-json").href = "/dl/" + story.id + "/json";
+        let canvasLink = $("#dl-canvas");
+        if (!canvasLink) {
+          canvasLink = document.createElement("a");
+          canvasLink.id = "dl-canvas";
+          canvasLink.className = "chip";
+          canvasLink.textContent = "256 色画布版";
+          canvasLink.target = "_blank";
+          canvasLink.rel = "noopener";
+          $("#dl-json").after(canvasLink);
+        }
+        canvasLink.href = "/watch2d/" + story.id;
         const cert = $("#create-cert");
         if (cert) cert.href = "#experience";
         result.classList.add("show");

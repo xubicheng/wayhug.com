@@ -89,6 +89,7 @@ wayhug selftest                     # 解析 / 动画 / PDF / 世界观自检
 wayhug ingest-stories <文件或目录>    # 导入 TXT 文稿（首页「文稿集合」自动更新）
 wayhug ingest-sketch <图> [标题] [四相] [四属性]
 wayhug ingest-dir <目录>             # 批量喂养素描原画
+wayhug render2d <编号|demo|all> [目录] # 导出 256 色 800×600 画布版 HTML
 ```
 
 文稿的放置与迭代约定见仓库根目录 [`manuscripts/README.md`](../manuscripts/README.md)：
@@ -101,14 +102,25 @@ cargo run --release -- ingest-stories ../manuscripts
 内容边界：不收录宗教、政治内容（`src/guard.rs`，网页 / 邮件 / 命令行共用）。
 网站只有动画，没有音乐、没有音效。
 
-四相：`dawn|day|dusk|night`（晨/昼/暮/夜）
+四相（世界层）：`yuan|xian|chong|ren`（原/仙/虫/人）
+光时：`dawn|day|dusk|night`（晨/昼/暮/夜，只影响节奏与拍子）
 四属性：`wind|fire|water|earth`（风/火/水/土）
+
+| 四相 | 界 | 招牌动物 | 性格 | 主色 |
+|------|----|----------|------|------|
+| 原 | 自然界 | 狐狸 | 容易害怕 | `#ff6633` |
+| 仙 | 灵气 | 小妖怪 | 喜欢笑着 | `#009999` |
+| 虫 | 色界生命 | 四足小鳄虫 | 会走路 | `#4d4d4d` |
+| 人 | 欲界的六道 | 农夫 | 耕田、收成、养家 | `#cc9966` |
+
+对外颜色一律经 256 色调色板贴色（`src/palette.rs`），画面规格见 [`docs/canvas2d.md`](docs/canvas2d.md)。
 
 例：
 
 ```bash
-wayhug ingest-sketch sketches/fox-01.png "小狐初稿 01" dawn wind
+wayhug ingest-sketch sketches/fox-01.png "小狐初稿 01" yuan wind
 wayhug ingest-dir sketches/
+wayhug render2d demo data/render2d
 ```
 
 原画会：校验格式 → 计算 sha256 → 取主色 → 给出四相建议 → 落盘 `data/sketches/` → 登记到 `data/wayhug.json`。
@@ -122,7 +134,9 @@ wayhug ingest-dir sketches/
 |------|------|
 | `/` | 一页式公众界面：看 / 写 / 领 / 寄 / 四相 |
 | `/watch/{id}` | 播放动画（`?still=1&scene=N` 定格） |
+| `/watch2d/{id}` | 256 色画布版（800×600，纯 HTML5 Canvas，无音频） |
 | `/dl/{id}/html|css|json` | 下载三件套 |
+| `/dl/{id}/canvas` | 下载画布版单文件 HTML |
 | `/verify/{id}` | 证书在线校验 |
 | `/cert/{id}.pdf` | A4 证书 PDF |
 | `/studio` | 后台工作台（令牌） |

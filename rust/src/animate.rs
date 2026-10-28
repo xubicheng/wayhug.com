@@ -422,6 +422,10 @@ pub fn build_html(story: &Story, opt: HtmlOptions<'_>) -> String {
     };
 
     let accent = story.scenes.first().map(|s| s.palette.accent.as_str()).unwrap_or("#708090");
+    let canvas_link = format!(
+        r##"<a class="chip" href="/watch2d/{}" target="_top">256 色画布版 ↗</a>"##,
+        esc(&story.id)
+    );
 
     format!(
         r##"<!DOCTYPE html>
@@ -440,6 +444,7 @@ pub fn build_html(story: &Story, opt: HtmlOptions<'_>) -> String {
   <div class="hud">
     <span class="chip">WAYHUG · TXT → 动画</span>
     {cta}
+    {canvas}
   </div>
   {scenes}
   <div class="caption">《{title}》 · {n} 幕 · 四相四属性 · 指纹 {fp}</div>
@@ -452,6 +457,7 @@ pub fn build_html(story: &Story, opt: HtmlOptions<'_>) -> String {
         css = css,
         still = still_css,
         cta = cta,
+        canvas = canvas_link,
         scenes = scenes,
         n = n,
         fp = esc(&story.fingerprint[..8.min(story.fingerprint.len())]),

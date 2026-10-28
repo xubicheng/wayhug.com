@@ -2,12 +2,11 @@
 // 引擎层 · 四相世界观（田字四分法）
 //
 // 田字四象限 = 四相 × 四属性：
-//   左上 晨 · 风   （相遇 / 轻快 / 漂移）
-//   右上 昼 · 火   （同行 / 明亮 / 上升）
-//   左下 暮 · 水   （试炼 / 低回 / 下落）
-//   右下 夜 · 土   （归处 / 安静 / 静止）
+//   四相（世界层）：原 / 仙 / 虫 / 人 —— 各有招牌动物、主色与一句性格
+//   四属性（动力层）：风 / 火 / 水 / 土
 //
-// 四相描述「光与时间」，四属性描述「动力与材质」。
+// 「晨 / 昼 / 暮 / 夜」仍保留，只作为动画的光时与节奏（Phase），
+// 不再对外称作四相；对外公开的四相一律是 原 / 仙 / 虫 / 人。
 // 本模块只做确定性分类，不依赖模型；后续可替换为更强的语义引擎。
 // ============================================================
 
@@ -280,20 +279,185 @@ pub fn public_view() -> serde_json::Value {
     })
     .collect::<Vec<_>>();
     serde_json::json!({
-        "version": "worldview/0.1",
+        "version": "worldview/0.2",
         "layout": "田字四象限",
-        "axes": { "phase": "四相 · 光与时间", "element": "四属性 · 动力与材质" },
+        "axes": { "realm": "四相 · 原 / 仙 / 虫 / 人", "element": "四属性 · 动力与材质" },
+        "realms": public_realms()["realms"].clone(),
         "quadrants": quads,
         "rules": [
-            "每一幕先判定四相，再判定四属性；四属性缺省时取四相的固定配对",
-            "四相同样构成叙事四拍：起（晨）· 承（昼）· 转（暮）· 合（夜）",
-            "扁平化色板只使用四相底色与情绪重音色，禁止渐变与位图"
+            "四相：原（自然界）· 仙（灵气）· 虫（色界生命）· 人（欲界的六道）",
+            "四属性缺省时取光时的固定配对；四属性只描述动力与材质",
+            "扁平化色板只使用四相主色与情绪重音色，禁止渐变与位图"
         ]
     })
 }
 
 pub const PHASES: [Phase; 4] = [Phase::Dawn, Phase::Day, Phase::Dusk, Phase::Night];
 pub const ELEMENTS: [Element; 4] = [Element::Wind, Element::Fire, Element::Water, Element::Earth];
+
+// ------------------------------------------------------------
+// 四相（世界层）：原 / 仙 / 虫 / 人
+// ------------------------------------------------------------
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Realm {
+    /// 原 · 自然界 —— 招牌动物：狐狸（橘色，容易害怕）
+    Yuan,
+    /// 仙 · 灵气 —— 招牌动物：小妖怪（青色，喜欢笑着）
+    Xian,
+    /// 虫 · 色界生命 —— 招牌动物：四足小鳄虫（黑灰，会走路）
+    Chong,
+    /// 人 · 欲界的六道 —— 招牌动物：农夫（黄种人，耕田养家）
+    Ren,
+}
+
+impl Realm {
+    pub fn key(&self) -> &'static str {
+        match self {
+            Realm::Yuan => "yuan",
+            Realm::Xian => "xian",
+            Realm::Chong => "chong",
+            Realm::Ren => "ren",
+        }
+    }
+    pub fn name(&self) -> &'static str {
+        match self {
+            Realm::Yuan => "原",
+            Realm::Xian => "仙",
+            Realm::Chong => "虫",
+            Realm::Ren => "人",
+        }
+    }
+    pub fn subtitle(&self) -> &'static str {
+        match self {
+            Realm::Yuan => "自然界",
+            Realm::Xian => "灵气",
+            Realm::Chong => "色界生命",
+            Realm::Ren => "欲界的六道",
+        }
+    }
+    pub fn animal_key(&self) -> &'static str {
+        match self {
+            Realm::Yuan => "fox",
+            Realm::Xian => "monster",
+            Realm::Chong => "bug",
+            Realm::Ren => "farmer",
+        }
+    }
+    pub fn animal_name(&self) -> &'static str {
+        match self {
+            Realm::Yuan => "狐狸",
+            Realm::Xian => "小妖怪",
+            Realm::Chong => "四足小鳄虫",
+            Realm::Ren => "农夫",
+        }
+    }
+    pub fn character(&self) -> &'static str {
+        match self {
+            Realm::Yuan => "容易害怕",
+            Realm::Xian => "喜欢笑着",
+            Realm::Chong => "会走路",
+            Realm::Ren => "想着耕田有收成好养家",
+        }
+    }
+    /// 主色（原始值，展示时一律贴到 256 色调色板）
+    pub fn color(&self) -> &'static str {
+        match self {
+            Realm::Yuan => "#ff7e47",
+            Realm::Xian => "#00a0a0",
+            Realm::Chong => "#4a4f55",
+            Realm::Ren => "#e0a978",
+        }
+    }
+    /// 256 色下的主色
+    pub fn accent(&self) -> String {
+        crate::palette::snap_hex(self.color())
+    }
+    pub fn from_key(k: &str) -> Option<Self> {
+        match k {
+            "yuan" | "原" => Some(Realm::Yuan),
+            "xian" | "仙" => Some(Realm::Xian),
+            "chong" | "虫" => Some(Realm::Chong),
+            "ren" | "人" => Some(Realm::Ren),
+            _ => None,
+        }
+    }
+}
+
+pub const REALMS: [Realm; 4] = [Realm::Yuan, Realm::Xian, Realm::Chong, Realm::Ren];
+
+const REALM_WORDS: &[(Realm, &[&str])] = &[
+    (
+        Realm::Yuan,
+        &["狐", "狸", "森", "林", "山", "河", "草", "树", "雪", "野", "风", "害怕", "躲", "月"],
+    ),
+    (Realm::Xian, &["妖", "仙", "灵", "笑", "云", "雾", "法", "飘", "梦", "光"]),
+    (Realm::Chong, &["虫", "鳄", "爬", "壳", "触", "四足", "叶", "缝", "石", "土"]),
+    (
+        Realm::Ren,
+        &["农", "田", "耕", "麦", "稻", "村", "收成", "镰", "汗", "灶", "屋", "家"],
+    ),
+];
+
+/// 角色的四相归属（招牌动物直接命中，其余按亲缘兜底）
+pub fn animal_realm(animal: &str) -> Realm {
+    match animal {
+        "fox" => Realm::Yuan,
+        "monster" => Realm::Xian,
+        "bug" => Realm::Chong,
+        "farmer" => Realm::Ren,
+        "rabbit" | "bear" => Realm::Yuan,
+        "owl" | "cat" => Realm::Xian,
+        _ => Realm::Yuan,
+    }
+}
+
+/// 文本里的四相线索：得分最高者，无命中返回 None
+pub fn detect_realm(text: &str) -> Option<Realm> {
+    let mut best: Option<(Realm, usize)> = None;
+    for (realm, words) in REALM_WORDS {
+        let score = score_words(text, words);
+        if score > 0 && best.map(|(_, b)| score > b).unwrap_or(true) {
+            best = Some((*realm, score));
+        }
+    }
+    best.map(|(r, _)| r)
+}
+
+/// 一幕的四相：招牌动物优先，其次文本线索，最后角色亲缘
+pub fn realm_for(animal: &str, text: &str) -> Realm {
+    if matches!(animal, "fox" | "monster" | "bug" | "farmer") {
+        return animal_realm(animal);
+    }
+    detect_realm(text).unwrap_or_else(|| animal_realm(animal))
+}
+
+/// 一幕（模型层）的四相
+pub fn realm_of_scene(scene: &crate::model::Scene) -> Realm {
+    realm_for(&scene.animal, &scene.text)
+}
+
+/// 供页面与 API 使用的四相公开视图
+pub fn public_realms() -> serde_json::Value {
+    let realms: Vec<serde_json::Value> = REALMS
+        .iter()
+        .enumerate()
+        .map(|(i, r)| {
+            serde_json::json!({
+                "n": i + 1,
+                "realm": r.key(),
+                "realmName": r.name(),
+                "subtitle": r.subtitle(),
+                "animal": r.animal_key(),
+                "animalName": r.animal_name(),
+                "character": r.character(),
+                "color": r.accent()
+            })
+        })
+        .collect();
+    serde_json::json!({ "version": "realms/1.0", "realms": realms })
+}
+
 
 /// 文稿集合 → 世界观校准数据
 ///
@@ -310,6 +474,7 @@ pub fn corpus_view(stories: &[Story]) -> serde_json::Value {
 
     let mut phase_scenes: BTreeMap<&'static str, usize> = BTreeMap::new();
     let mut element_scenes: BTreeMap<&'static str, usize> = BTreeMap::new();
+    let mut realm_scenes: BTreeMap<&'static str, usize> = BTreeMap::new();
     let (mut scenes, mut chars, mut cast) = (0usize, 0usize, 0usize);
     for s in &pool {
         scenes += s.stats.scenes;
@@ -322,6 +487,8 @@ pub fn corpus_view(stories: &[Story]) -> serde_json::Value {
                 .unwrap_or_else(|| paired_element(Phase::from_key(&sc.phase).unwrap_or(Phase::Dawn)))
                 .key();
             *element_scenes.entry(el).or_insert(0) += 1;
+            let rk = realm_of_scene(sc).key();
+            *realm_scenes.entry(rk).or_insert(0) += 1;
         }
     }
 
@@ -360,6 +527,24 @@ pub fn corpus_view(stories: &[Story]) -> serde_json::Value {
             })
         })
         .collect();
+    let realms: Vec<serde_json::Value> = REALMS
+        .iter()
+        .map(|r| {
+            let n = *realm_scenes.get(r.key()).unwrap_or(&0);
+            serde_json::json!({
+                "realm": r.key(),
+                "realmName": r.name(),
+                "subtitle": r.subtitle(),
+                "animal": r.animal_key(),
+                "animalName": r.animal_name(),
+                "character": r.character(),
+                "color": r.accent(),
+                "scenes": n,
+                "share": share(n)
+            })
+        })
+        .collect();
+
     let latest = pool
         .iter()
         .max_by(|a, b| a.created_at.cmp(&b.created_at))
@@ -373,6 +558,7 @@ pub fn corpus_view(stories: &[Story]) -> serde_json::Value {
         "chars": chars,
         "cast": cast,
         "latest": latest,
+        "realms": realms,
         "phases": phases,
         "elements": elements
     })

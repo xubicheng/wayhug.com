@@ -10,6 +10,7 @@
 // ============================================================
 
 mod animate;
+mod canvas2d;
 mod certificate;
 mod config;
 mod fontpack;
@@ -17,6 +18,7 @@ mod guard;
 mod mail;
 mod model;
 mod pages;
+mod palette;
 mod sketch;
 mod store;
 mod story;
@@ -66,12 +68,38 @@ fn selftest(cfg: &Config) {
 fn usage() {
     println!(
         "wayhug — 故事到动物的 IP 实验场\n\n\
-         用法:\n  wayhug                      启动服务\n  wayhug selftest             解析 / 动画 / PDF 自检\n  wayhug ingest-stories <文件或目录>  导入 TXT 文稿（第一行可作标题）\n  wayhug ingest-sketch <file> [标题] [四相] [四属性]\n  wayhug ingest-dir <目录>     批量喂养素描原画\n\n\
-         四相: dawn|day|dusk|night   四属性: wind|fire|water|earth\n\
+         用法:\n  wayhug                      启动服务\n  wayhug selftest             解析 / 动画 / PDF 自检\n  wayhug ingest-stories <文件或目录>  导入 TXT 文稿（第一行可作标题）\n  wayhug ingest-sketch <file> [标题] [四相] [四属性]\n  wayhug ingest-dir <目录>     批量喂养素描原画\n  wayhug render2d <编号|demo|all> [输出目录]\n                             生成 256 色 800×600 HTML5 画布动画\n\n\
+         四相: 原(yuan) | 仙(xian) | 虫(chong) | 人(ren)\n\
+         光时: dawn|day|dusk|night   四属性: wind|fire|water|earth\n\
          内容边界: 不收录宗教、政治内容\n\
          环境变量: WAYHUG_PORT, WAYHUG_ADMIN_TOKEN, WAYHUG_DATA, WAYHUG_SKETCH_DIR,\n\
                    WAYHUG_SMTP_*, WAYHUG_IMAP_*, WAYHUG_AUTO_REPLY, WAYHUG_SITE_URL"
     );
+}
+
+/// 我自己用的 2D 工具：把作品渲染成 256 色、800×600 的 HTML5 画布动画
+fn render2d(cfg: &Config, target: &str, out: &Path) -> Result<(), String> {
+    let mut db = store::load(cfg);
+    store::ensure_demo(cfg, &mut db);
+    let list: Vec<model::Story> = match target {
+        "all" => db.stories.clone(),
+        "demo" => vec![db
+            .find_story("demo")
+            .cloned()
+            .ok_or_else(|| "演示作品不存在".to_string())?],
+        id => vec![db
+            .find_story(id)
+            .cloned()
+            .ok_or_else(|| format!("找不到作品: {}", id))?],
+    };
+    if list.is_empty() {
+        return Err("没有可渲染的作品".into());
+    }
+    for s in &list {
+        let p = canvas2d::write_file(s, out).map_err(|e| format!("写入失败: {}", e))?;
+        println!("{} · {} 幕 → {}", s.id, s.scenes.len(), p.display());
+    }
+    Ok(())
 }
 
 /// 导入 TXT 文稿（单文件或目录）：第一行可作标题，自动分幕、判四相
@@ -159,9 +187,9 @@ async fn main() {
                     std::process::exit(2);
                 }
                 let title = args.get(3).map(|s| s.as_str()).unwrap_or("");
-                let phase = args.get(4).map(|s| s.as_str()).unwrap_or("");
+                let realm = args.get(4).map(|s| s.as_str()).unwrap_or("");
                 let element = args.get(5).map(|s| s.as_str()).unwrap_or("");
-                if let Err(e) = sketch::cli_ingest(&cfg, Path::new(&args[2]), title, phase, element) {
+                if let Err(e) = sketch::cli_ingest(&cfg, Path::new(&args[2]), title, realm, element) {
                     eprintln!("{}", e);
                     std::process::exit(1);
                 }
@@ -173,6 +201,21 @@ async fn main() {
                     std::process::exit(2);
                 }
                 if let Err(e) = sketch::cli_ingest_dir(&cfg, Path::new(&args[2])) {
+                    eprintln!("{}", e);
+                    std::process::exit(1);
+                }
+                return;
+            }
+            "render2d" => {
+                if args.len() < 3 {
+                    eprintln!("用法: wayhug render2d <编号|demo|all> [输出目录]");
+                    std::process::exit(2);
+                }
+                let out = args
+                    .get(3)
+                    .map(std::path::PathBuf::from)
+                    .unwrap_or_else(|| std::path::PathBuf::from("data/render2d"));
+                if let Err(e) = render2d(&cfg, &args[2], &out) {
                     eprintln!("{}", e);
                     std::process::exit(1);
                 }

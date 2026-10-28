@@ -6,6 +6,7 @@
 // ============================================================
 
 use crate::animate::{build_css, build_html, HtmlOptions};
+use crate::canvas2d;
 use crate::certificate::certificate_pdf;
 use crate::config::Config;
 use crate::mail;
@@ -49,6 +50,7 @@ pub fn router(state: AppState) -> Router {
     Router::new()
         .route("/", get(root))
         .route("/watch/{id}", get(watch))
+        .route("/watch2d/{id}", get(watch2d))
         .route("/dl/{id}/{kind}", get(download))
         .route("/cert/{id}", get(cert_pdf))
         .route("/verify/{id}", get(verify_page))
@@ -252,6 +254,18 @@ async fn watch(State(state): State<AppState>, Path(id): Path<String>, Query(q): 
         .into_response()
 }
 
+async fn watch2d(State(state): State<AppState>, Path(id): Path<String>) -> Response {
+    let db = state.db.lock().await;
+    let Some(story) = db.find_story(&id) else {
+        return (
+            StatusCode::NOT_FOUND,
+            html_page(pages::error_page(404, "作品不存在")),
+        )
+            .into_response();
+    };
+    html_page(canvas2d::render_html(story))
+}
+
 async fn download(State(state): State<AppState>, Path((id, kind)): Path<(String, String)>) -> Response {
     let db = state.db.lock().await;
     let Some(story) = db.find_story(&id) else {
@@ -261,6 +275,7 @@ async fn download(State(state): State<AppState>, Path((id, kind)): Path<(String,
         "html" => (build_html(story, HtmlOptions { cta_url: Some("/#experience"), ..Default::default() }), "text/html; charset=utf-8", "html"),
         "css" => (build_css(story), "text/css; charset=utf-8", "css"),
         "json" => (serde_json::to_string_pretty(&story_to_json(story)).unwrap_or_default(), "application/json; charset=utf-8", "json"),
+        "canvas" => (canvas2d::render_html(story), "text/html; charset=utf-8", "html"),
         _ => return (StatusCode::NOT_FOUND, "unknown kind").into_response(),
     };
     Response::builder()

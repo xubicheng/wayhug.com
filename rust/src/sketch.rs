@@ -9,7 +9,7 @@
 use crate::config::Config;
 use crate::model::{Db, Sketch};
 use crate::store::{now_iso, save};
-use crate::worldview::{Element, Phase};
+use crate::worldview::{Element, Phase, Realm};
 use image::GenericImageView;
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
@@ -203,18 +203,29 @@ pub fn ingest_bytes(
     Ok(sketch)
 }
 
-/// 命令行：把单张图喂进原画库
-pub fn cli_ingest(cfg: &Config, path: &Path, title: &str, phase: &str, element: &str) -> Result<(), String> {
+/// 命令行：把单张图喂进原画库（`realm` 为四相：原/仙/虫/人，可留空）
+pub fn cli_ingest(
+    cfg: &Config,
+    path: &Path,
+    title: &str,
+    realm: &str,
+    element: &str,
+) -> Result<(), String> {
     let bytes = fs::read(path).map_err(|e| format!("读取失败 {}: {}", path.display(), e))?;
     let mut db = crate::store::load(cfg);
-    let sketch = ingest_bytes(cfg, &mut db, &bytes, title, phase, element, "", "")?;
+    let (realm, tags) = match Realm::from_key(realm.trim()) {
+        Some(r) => (Some(r), format!("realm:{}", r.key())),
+        None => (None, String::new()),
+    };
+    let sketch = ingest_bytes(cfg, &mut db, &bytes, title, "", element, &tags, "")?;
     println!(
-        "已导入：{}  {}x{}  {}/{}  主色 {}",
+        "已导入：{}  {}x{}  {}/{}  四相 {}  主色 {}",
         sketch.id,
         sketch.width,
         sketch.height,
         Phase::from_key(&sketch.phase).map(|p| p.name()).unwrap_or("晨"),
         Element::from_key(&sketch.element).map(|e| e.name()).unwrap_or("风"),
+        realm.map(|r| r.name()).unwrap_or("待定"),
         sketch.palette.join(" ")
     );
     Ok(())

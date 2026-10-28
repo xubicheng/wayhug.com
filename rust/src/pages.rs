@@ -59,44 +59,29 @@ fn header() -> &'static str {
 }
 
 fn quadrant_cards() -> String {
-    let v = worldview::public_view();
-    let quads = v["quadrants"].as_array().cloned().unwrap_or_default();
-    let animal_names = |keys: &[&str]| -> String {
-        keys.iter()
-            .map(|k| crate::story::animal(k).name)
-            .collect::<Vec<_>>()
-            .join(" / ")
-    };
-    quads
+    let realms = worldview::public_realms()["realms"]
+        .as_array()
+        .cloned()
+        .unwrap_or_default();
+    realms
         .iter()
-        .enumerate()
-        .map(|(i, q)| {
-            let animals: Vec<&str> = q["animals"]
-                .as_array()
-                .map(|a| a.iter().filter_map(|x| x.as_str()).collect())
-                .unwrap_or_default();
+        .map(|r| {
+            let n = r["n"].as_u64().unwrap_or(1);
+            let accent = esc(r["color"].as_str().unwrap_or("#ff6633"));
             format!(
                 r##"<article class="quad">
   <div class="corner">{n:02} / 04</div>
   <div class="bar" style="background:{accent}"></div>
-  <h3>{phase} · {element}</h3>
-  <div class="attr"><i class="swatch" style="background:{ec}"></i>{beat} · {motion}</div>
-  <p>主色 {accent}；角色亲和：{animals}；基调 {hint}</p>
+  <h3>{name} · {subtitle}</h3>
+  <div class="attr"><i class="swatch" style="background:{accent}"></i>{animal}</div>
+  <p>{character}；主色 {accent}。</p>
 </article>"##,
-                n = i + 1,
-                accent = esc(q["accent"].as_str().unwrap_or("#ff7e47")),
-                ec = esc(q["elementColor"].as_str().unwrap_or("#ffb703")),
-                phase = esc(q["phaseName"].as_str().unwrap_or("晨")),
-                element = esc(q["elementName"].as_str().unwrap_or("风")),
-                beat = esc(q["beat"].as_str().unwrap_or("")),
-                motion = esc(q["motion"].as_str().unwrap_or("")),
-                animals = esc(&animal_names(&animals)),
-                hint = match i {
-                    0 => "轻、亮、开始",
-                    1 => "暖、快、推进",
-                    2 => "低、慢、回望",
-                    _ => "静、深、收束",
-                }
+                n = n,
+                name = esc(r["realmName"].as_str().unwrap_or("原")),
+                subtitle = esc(r["subtitle"].as_str().unwrap_or("自然界")),
+                animal = esc(r["animalName"].as_str().unwrap_or("狐狸")),
+                character = esc(r["character"].as_str().unwrap_or("容易害怕")),
+                accent = accent
             )
         })
         .collect::<Vec<_>>()
@@ -105,7 +90,11 @@ fn quadrant_cards() -> String {
 
 /// 文稿校准条：四相占比完全来自已收录 TXT 的逐幕统计
 fn corpus_block(c: &serde_json::Value) -> String {
-    let phases = c["phases"].as_array().cloned().unwrap_or_default();
+    let phases = c["realms"]
+        .as_array()
+        .or_else(|| c["phases"].as_array())
+        .cloned()
+        .unwrap_or_default();
     if phases.is_empty() {
         return String::new();
     }
@@ -117,8 +106,8 @@ fn corpus_block(c: &serde_json::Value) -> String {
             format!(
                 r##"<i style="flex:{flex};background:{accent}" title="{beat}"></i>"##,
                 flex = share.max(4),
-                accent = if empty { "#dcdfe3".to_string() } else { esc(p["accent"].as_str().unwrap_or("#e8a33d")) },
-                beat = esc(p["beat"].as_str().unwrap_or(""))
+                accent = if empty { "#dcdfe3".to_string() } else { esc(p["color"].as_str().or_else(|| p["accent"].as_str()).unwrap_or("#e8a33d")) },
+                beat = esc(p["animalName"].as_str().or_else(|| p["beat"].as_str()).unwrap_or(""))
             )
         })
         .collect::<Vec<_>>()
@@ -129,8 +118,8 @@ fn corpus_block(c: &serde_json::Value) -> String {
             let share = p["share"].as_u64().unwrap_or(0);
             format!(
                 r##"<span><i style="background:{accent}"></i>{name} {n} 幕 · {share}%</span>"##,
-                accent = if share == 0 { "#dcdfe3".to_string() } else { esc(p["accent"].as_str().unwrap_or("#e8a33d")) },
-                name = esc(p["phaseName"].as_str().unwrap_or("")),
+                accent = if share == 0 { "#dcdfe3".to_string() } else { esc(p["color"].as_str().or_else(|| p["accent"].as_str()).unwrap_or("#e8a33d")) },
+                name = esc(p["realmName"].as_str().or_else(|| p["phaseName"].as_str()).unwrap_or("")),
                 n = p["scenes"].as_u64().unwrap_or(0),
                 share = share
             )
@@ -260,7 +249,7 @@ pub fn landing(l: Landing<'_>) -> String {
         </div>
         <div class="panel flat">
           <h3>四相坐标</h3>
-          <p>每一幕都带「四相 × 四属性」坐标：晨风、昼火、暮水、夜土。颜色、运动、叙事节拍都由坐标推导，而不是随意挑选。</p>
+          <p>四相是原（自然界）、仙（灵气）、虫（色界生命）、人（欲界的六道）；每一幕都带「四相 × 四属性」坐标，颜色、运动与节奏都由坐标推导，而不是随意挑选。</p>
           <div class="downloads"><a class="chip accent" href="#world">看田字四相 →</a></div>
         </div>
       </div>
@@ -416,7 +405,7 @@ pub fn landing(l: Landing<'_>) -> String {
         <div>
           <span class="index">05 / 四相</span>
           <h2>田字四分法的世界观</h2>
-          <p>四相描述光与时间：晨、昼、暮、夜；四属性描述动力与材质：风、火、水、土。每一幕先定相，再定属性；没有明确属性时，取该相的固定配对。</p>
+          <p>四相是四个世界层：原（自然界，狐狸 · 橘）、仙（灵气，小妖怪 · 青）、虫（色界生命，四足小鳄虫 · 黑灰）、人（欲界的六道，农夫 · 黄）。四属性描述动力与材质：风、火、水、土。</p>
         </div>
         <div class="downloads"><a class="chip" href="/api/worldview">JSON 视图</a></div>
       </div>
@@ -424,9 +413,9 @@ pub fn landing(l: Landing<'_>) -> String {
         {quads}
       </div>
       <div class="world-note">
-        <span><strong>叙事四拍</strong> 起（晨）· 承（昼）· 转（暮）· 合（夜）</span>
-        <span><strong>扁平规则</strong> 只使用四相底色与情绪重音色，禁止渐变与位图</span>
-        <span><strong>扩展方式</strong> 原画喂养模块会把素描主色映射到四相，形成新的参考样本</span>
+        <span><strong>四相</strong> 原 · 仙 · 虫 · 人</span>
+        <span><strong>扁平规则</strong> 只用 256 色、800×600、无渐变、无位图、无音频</span>
+        <span><strong>扩展方式</strong> 新文稿按招牌动物与关键词自动归档到四相</span>
       </div>
       {corpus}
     </div>

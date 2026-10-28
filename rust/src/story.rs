@@ -28,6 +28,9 @@ pub struct Mood {
 
 pub const ANIMALS: &[Animal] = &[
     Animal { key: "fox", name: "小狐", color: "#ff7e47", keywords: &["小狐", "狐狸", "狐", "狸", "fox"] },
+    Animal { key: "monster", name: "小妖怪", color: "#00a0a0", keywords: &["小妖怪", "妖怪", "小妖", "monster"] },
+    Animal { key: "bug", name: "四足小鳄虫", color: "#4a4f55", keywords: &["小鳄虫", "鳄虫", "鳄", "四足", "bug"] },
+    Animal { key: "farmer", name: "农夫", color: "#e0a978", keywords: &["农夫", "农民", "农人", "耕田", "收成", "farmer"] },
     Animal { key: "owl", name: "墨鸮", color: "#6b5b95", keywords: &["墨鸮", "鸮", "猫头鹰", "owl"] },
     Animal { key: "rabbit", name: "棉棉", color: "#ffb6c1", keywords: &["棉棉", "兔", "rabbit", "bunny"] },
     Animal { key: "bear", name: "憨熊", color: "#8b6f47", keywords: &["憨熊", "熊", "bear"] },
