@@ -171,6 +171,7 @@ data/
 - 与 Node 版 `data/lab.json` 完全隔离，可并行灰度、随时回滚。
 - 单二进制部署：`cargo build --release` 后复制 `target/release/wayhug`，用 systemd 常驻，Apache/Nginx 反代到本端口。
 - 文稿导入后需重启常驻服务（`systemctl restart wayhug-rust`），让内存中的数据库重新加载 JSON。
+- 若本机无法直连 GitHub：先在服务器保留镜像 `~/wayhug-mirror.git`，本地 `git remote add cloud ssh://ubuntu@129.211.170.72/home/ubuntu/wayhug-mirror.git`，`git push cloud master`，再在服务器执行 `git -C ~/wayhug-mirror.git push origin master`。
 - 建议生产环境设置 `WAYHUG_ADMIN_TOKEN`、`WAYHUG_SITE_URL` 与邮件账号；其余保持默认即可。
 
 ---
