@@ -135,6 +135,7 @@ wayhug render2d demo data/render2d
 | `/` | 一页式公众界面：看 / 写 / 领 / 寄 / 四相 |
 | `/watch/{id}` | 播放动画（`?still=1&scene=N` 定格） |
 | `/watch2d/{id}` | 256 色画布版（800×600，纯 HTML5 Canvas，无音频） |
+| `/assets/realm/{key}.svg` | 四相招牌动物原创 SVG（yuan/xian/chong/ren） |
 | `/dl/{id}/html|css|json` | 下载三件套 |
 | `/dl/{id}/canvas` | 下载画布版单文件 HTML |
 | `/verify/{id}` | 证书在线校验 |

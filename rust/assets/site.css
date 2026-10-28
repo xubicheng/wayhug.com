@@ -280,6 +280,9 @@ img { max-width: 100%; display: block; }
   position: relative;
 }
 .quad .bar { width: 34px; height: 6px; border-radius: 3px; margin-bottom: 16px; }
+.quad .realm-head { display: flex; align-items: center; gap: 12px; }
+.quad .realm-head h3 { margin: 0; }
+.quad .realm-art { width: 56px; height: 56px; flex: 0 0 56px; display: block; }
 .quad h3 { margin: 0 0 4px; font-size: 18px; letter-spacing: .02em; }
 .quad .attr { font-size: 12px; color: var(--muted); letter-spacing: .16em; }
 .quad .attr .swatch {

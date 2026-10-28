@@ -72,11 +72,12 @@ fn quadrant_cards() -> String {
                 r##"<article class="quad">
   <div class="corner">{n:02} / 04</div>
   <div class="bar" style="background:{accent}"></div>
-  <h3>{name} · {subtitle}</h3>
+  <div class="realm-head"><img class="realm-art" src="/assets/realm/{key}.svg" width="56" height="56" alt="{animal}" loading="lazy"><h3>{name} · {subtitle}</h3></div>
   <div class="attr"><i class="swatch" style="background:{accent}"></i>{animal}</div>
   <p>{character}；主色 {accent}。</p>
 </article>"##,
                 n = n,
+                key = esc(r["realm"].as_str().unwrap_or("yuan")),
                 name = esc(r["realmName"].as_str().unwrap_or("原")),
                 subtitle = esc(r["subtitle"].as_str().unwrap_or("自然界")),
                 animal = esc(r["animalName"].as_str().unwrap_or("狐狸")),

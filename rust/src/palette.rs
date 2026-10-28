@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 王元会 (wayhug.com) <bc.xu@hotmail.com>. All rights reserved.
 // ============================================================
 // 交付层 · 256 色调色板（HTML5 画布专用）
 //

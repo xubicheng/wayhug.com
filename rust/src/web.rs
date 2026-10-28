@@ -51,6 +51,7 @@ pub fn router(state: AppState) -> Router {
         .route("/", get(root))
         .route("/watch/{id}", get(watch))
         .route("/watch2d/{id}", get(watch2d))
+        .route("/assets/realm/{key}", get(realm_asset))
         .route("/dl/{id}/{kind}", get(download))
         .route("/cert/{id}", get(cert_pdf))
         .route("/verify/{id}", get(verify_page))
@@ -264,6 +265,29 @@ async fn watch2d(State(state): State<AppState>, Path(id): Path<String>) -> Respo
             .into_response();
     };
     html_page(canvas2d::render_html(story))
+}
+
+/// 四相招牌动物的原创 SVG 资产（编译期内嵌，无第三方素材）
+const REALM_SVGS: &[(&str, &str)] = &[
+    ("yuan", include_str!("../assets/realm/yuan.svg")),
+    ("xian", include_str!("../assets/realm/xian.svg")),
+    ("chong", include_str!("../assets/realm/chong.svg")),
+    ("ren", include_str!("../assets/realm/ren.svg")),
+];
+
+async fn realm_asset(Path(key): Path<String>) -> Response {
+    let key = key.trim_end_matches(".svg");
+    match REALM_SVGS.iter().find(|(k, _)| *k == key) {
+        Some((_, body)) => (
+            [
+                (header::CONTENT_TYPE, "image/svg+xml; charset=utf-8"),
+                (header::CACHE_CONTROL, "public, max-age=604800"),
+            ],
+            *body,
+        )
+            .into_response(),
+        None => (StatusCode::NOT_FOUND, "unknown realm asset").into_response(),
+    }
 }
 
 async fn download(State(state): State<AppState>, Path((id, kind)): Path<(String, String)>) -> Response {
