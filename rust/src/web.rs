@@ -34,14 +34,16 @@ pub struct AppState {
     pub cfg: Arc<Config>,
     pub db: Arc<Mutex<Db>>,
     pub rate: Arc<Mutex<HashMap<String, (Instant, u32)>>>,
+    pub analytics: Arc<crate::analytics::Analytics>,
 }
 
 impl AppState {
-    pub fn new(cfg: Config, db: Db) -> Self {
+    pub fn new(cfg: Config, db: Db, analytics: crate::analytics::Analytics) -> Self {
         Self {
             cfg: Arc::new(cfg),
             db: Arc::new(Mutex::new(db)),
             rate: Arc::new(Mutex::new(HashMap::new())),
+            analytics: Arc::new(analytics),
         }
     }
 }
@@ -81,12 +83,18 @@ pub fn router(state: AppState) -> Router {
         .route("/lab/cert/{id}", get(redirect_cert))
         .route("/lab/verify/{id}", get(redirect_verify))
         .route("/favicon.ico", get(favicon))
+        .route("/brand.png", get(brand_logo))
         .route("/favicon.svg", get(favicon))
         .route("/robots.txt", get(robots_txt))
         .route("/sitemap.xml", get(sitemap_xml))
         .layer(DefaultBodyLimit::max(13 * 1024 * 1024))
+        .route("/api/track", post(api_track))
+        .route("/api/stats", get(api_stats))
+        .route("/api/maintenance", get(api_maintenance))
+        .route("/stats", get(stats_html))
         .fallback(not_found)
-        .with_state(state)
+        .with_state(state.clone())
+        .layer(axum::middleware::from_fn_with_state(state, track_hit))
 }
 
 fn json_err(code: StatusCode, msg: &str) -> Response {
@@ -105,7 +113,7 @@ fn bearer_ok(state: &AppState, headers: &HeaderMap, query_token: Option<&str>) -
     header_token == cfg.admin_token || query_token.map(|t| t == cfg.admin_token).unwrap_or(false)
 }
 
-fn client_ip(headers: &HeaderMap) -> String {
+pub fn extract_ip(headers: &HeaderMap) -> String {
     headers
         .get("x-forwarded-for")
         .and_then(|v| v.to_str().ok())
@@ -144,7 +152,7 @@ fn write_ok(state: &AppState, headers: &HeaderMap) -> bool {
 }
 
 /// HTML 页面统一不缓存，避免浏览器拿着旧的内联脚本继续用
-fn html_page(html: String) -> Response {
+pub fn html_page(html: String) -> Response {
     (
         [
             (header::CONTENT_TYPE, "text/html; charset=utf-8"),
@@ -157,7 +165,7 @@ fn html_page(html: String) -> Response {
 
 /// 简单的写入限流：同一 IP 10 分钟内最多 30 次
 async fn allow_write(state: &AppState, headers: &HeaderMap) -> bool {
-    let key = client_ip(headers);
+    let key = extract_ip(headers);
     let mut map = state.rate.lock().await;
     let now = Instant::now();
     let entry = map.entry(key).or_insert((now, 0));
@@ -180,9 +188,14 @@ async fn redirect_home() -> Response {
     redirect("/")
 }
 
-/// 浏览器标签页图标（橘色 W），同时响应 /favicon.ico 与 /favicon.svg
+/// 浏览器标签页图标（王元会定制 PNG），响应 /favicon.ico
 async fn favicon() -> Response {
-    ([(header::CONTENT_TYPE, "image/svg+xml")], crate::pages::FAVICON_SVG).into_response()
+    ([(header::CONTENT_TYPE, "image/png")], crate::pages::FAVICON_PNG).into_response()
+}
+
+/// 页头品牌 logo（Wyh 圆形 PNG），响应 /brand.png
+async fn brand_logo() -> Response {
+    ([(header::CONTENT_TYPE, "image/png")], crate::pages::BRAND_LOGO_PNG).into_response()
 }
 
 /// robots.txt：允许全部爬虫，指定 sitemap
@@ -770,3 +783,61 @@ async fn api_admin_sketch_upload(
 // 让 `Story` 类型在本模块被使用，避免仅测试路径引用
 #[allow(dead_code)]
 fn _story_type_hint(_: &Story) {}
+
+// ---------- analytics middleware + handlers ----------
+async fn track_hit(
+    State(state): State<AppState>,
+    method: axum::http::Method,
+    uri: axum::http::Uri,
+    headers: HeaderMap,
+    req: axum::http::Request<axum::body::Body>,
+    next: axum::middleware::Next,
+) -> Response {
+    let start = std::time::Instant::now();
+    let path = uri.path().to_string();
+    let ip = crate::web::extract_ip(&headers);
+    let ua = headers.get("user-agent").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let referer = headers.get("referer").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let mut resp = next.run(req).await;
+    let status = resp.status().as_u16();
+    let latency = start.elapsed().as_millis() as u64;
+    let a = state.analytics.clone();
+    tokio::spawn(async move {
+        a.record_hit(&ip, method.as_str(), &path, status, latency, &ua, &referer).await;
+    });
+    resp
+}
+
+async fn api_track(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    axum::Json(body): axum::Json<serde_json::Value>,
+) -> Response {
+    let ip = crate::web::extract_ip(&headers);
+    let ua = headers.get("user-agent").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let event = body.get("event").and_then(|v| v.as_str())
+        .or_else(|| body.get("kind").and_then(|v| v.as_str()))
+        .unwrap_or("event").to_string();
+    let extra = body.get("extra").cloned();
+    state.analytics.record_event(&ip, &event, &ua, extra).await;
+    Json(json!({ "ok": true })).into_response()
+}
+
+async fn api_stats(State(state): State<AppState>) -> Response {
+    let s = state.analytics.summary(7);
+    Json(json!({"ok": true, "window": s.window_days, "today": s.today, "total": s.total,
+        "paths": s.recent_paths, "events": s.recent_events,
+        "dir_bytes": s.dir_bytes, "disk_usage_pct": s.disk_usage_pct})).into_response()
+}
+
+async fn api_maintenance(State(state): State<AppState>) -> Response {
+    let r = state.analytics.daily_maintenance(7, 90);
+    Json(json!({"ok": true, "compressed": r.compressed, "deleted": r.deleted,
+        "freed_bytes": r.freed_bytes, "total_bytes": r.total_bytes,
+        "disk_usage_pct": r.disk_usage_pct})).into_response()
+}
+
+async fn stats_html(State(state): State<AppState>) -> Response {
+    let s = state.analytics.summary(7);
+    crate::web::html_page(crate::analytics::render_stats_html(&s))
+}

@@ -9,6 +9,7 @@
 //   交付层 pages     公众页面 + studio + A4 PDF
 // ============================================================
 
+mod analytics;
 mod animate;
 mod canvas2d;
 mod certificate;
@@ -27,6 +28,7 @@ mod worldview;
 
 use config::Config;
 use std::path::Path;
+use analytics::Analytics;
 use web::AppState;
 
 fn selftest(cfg: &Config) {
@@ -240,7 +242,8 @@ async fn main() {
     let mut db = store::load(&cfg);
     store::ensure_demo(&cfg, &mut db);
 
-    let state = AppState::new(cfg.clone(), db);
+    let analytics = Analytics::new(cfg.data_path.parent().unwrap_or_else(|| std::path::Path::new(".")));
+    let state = AppState::new(cfg.clone(), db, analytics);
     tokio::spawn(mail::run(cfg.clone(), state.db.clone()));
 
     let app = web::router(state);
