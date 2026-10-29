@@ -190,8 +190,8 @@ pub struct HitRecord {
     #[serde(rename = "p")] pub path: String,
     #[serde(rename = "s")] pub status: u16,
     #[serde(rename = "l")] pub latency_ms: u64,
-    #[serde(skip_serializing_if = "String::is_empty", rename = "ua")] pub ua: String,
-    #[serde(skip_serializing_if = "String::is_empty", rename = "ref")] pub referer: String,
+    #[serde(default, skip_serializing_if = "String::is_empty", rename = "ua")] pub ua: String,
+    #[serde(default, skip_serializing_if = "String::is_empty", rename = "ref")] pub referer: String,
     #[serde(rename = "kind")] pub kind: String,
 }
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -200,7 +200,7 @@ pub struct EventRecord {
     #[serde(rename = "ip")] pub ip: String,
     #[serde(rename = "kind")] pub kind: String,
     #[serde(rename = "ev")] pub event: String,
-    #[serde(skip_serializing_if = "String::is_empty", rename = "ua")] pub ua: String,
+    #[serde(default, skip_serializing_if = "String::is_empty", rename = "ua")] pub ua: String,
     #[serde(skip_serializing_if = "Option::is_none", rename = "extra")] pub extra: Option<serde_json::Value>,
 }
 #[derive(Debug, Serialize, Default)] pub struct DailyStats {
