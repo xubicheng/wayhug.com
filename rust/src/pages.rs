@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // 交付层 · 页面（干净、简单的公众界面；复杂度留在后台）
 //
 // 公网只有一页：看 → 写 → 领 → 寄。
@@ -15,8 +15,9 @@ const CSS: &str = include_str!("../assets/site.css");
 const APP_JS: &str = include_str!("../assets/app.js");
 const STUDIO_JS: &str = include_str!("../assets/studio.js");
 
-/// 浏览器标签页图标：橘色圆角方块 + 白色 W（与页头品牌标记一致）
-pub const FAVICON_SVG: &str = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='#ff7e47'/><text x='16' y='24' font-family='system-ui,sans-serif' font-size='22' font-weight='800' fill='#fff' text-anchor='middle'>W</text></svg>";
+/// 浏览器标签页图标：王元会定制 PNG（编译期内嵌为 data URI）
+pub const FAVICON_PNG: &[u8] = include_bytes!("../assets/favicon.png");
+pub const BRAND_LOGO_PNG: &[u8] = include_bytes!("../assets/brand_logo.png");
 
 /// 公安备案徽章（PNG，编译期内嵌）
 const BEIAN_BADGE_PNG: &[u8] = include_bytes!("../assets/beian_badge.png");
@@ -60,9 +61,9 @@ fn shell(title: &str, description: &str, body: &str, js: &str, extra_js: &str) -
 <meta name="keywords" content="王元会, 动画生成, TXT转动画, 故事动画, 文字动画, wayhug, 动物动画, IP创作">
 <meta name="author" content="王元会">
 <meta name="robots" content="index, follow, max-image-preview:large">
-<meta name="theme-color" content="#ff7e47">
+<meta name="theme-color" content="#5d8aa8">
 <link rel="canonical" href="https://wayhug.com/">
-<link rel="icon" type="image/svg+xml" href="{favicon}">
+<link rel="icon" type="image/png" href="{favicon}">
 <link rel="apple-touch-icon" href="{favicon}">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="王元会">
@@ -85,7 +86,7 @@ fn shell(title: &str, description: &str, body: &str, js: &str, extra_js: &str) -
 "##,
         title = esc(title),
         desc = esc(description),
-        favicon = format!("data:image/svg+xml,{}", FAVICON_SVG.replace('#', "%23")),
+        favicon = format!("data:image/png;base64,{}", base64_encode(FAVICON_PNG)),
         jsonld = r#"{"@context":"https://schema.org","@type":"WebSite","name":"王元会","alternateName":"WAYHUG","url":"https://wayhug.com/","description":"把一段文字变成一部会呼吸的动画。王元会的文字到动画 IP 实验场。","inLanguage":"zh-CN","author":{"@type":"Person","name":"王元会"}}"#,
         css = CSS,
         body = body,
@@ -97,7 +98,7 @@ fn shell(title: &str, description: &str, body: &str, js: &str, extra_js: &str) -
 fn header() -> &'static str {
     r##"<header class="top">
   <div class="wrap">
-    <a class="brand" href="/"><span class="brand-mark">W</span>王元会</a>
+    <a class="brand" href="/"><img class="brand-logo" src="/brand.png" alt="WYH" width="26" height="26">王元会</a>
     <nav class="nav">
       <a href="#watch">看</a>
       <a href="#create">写</a>
@@ -549,7 +550,7 @@ pub fn landing(l: Landing<'_>) -> String {
         ),
         &body,
         APP_JS,
-        "",
+        "<script src=\"/js/autosave.js\" defer></script>",
     )
 }
 
@@ -592,7 +593,7 @@ SOFTWARE.</pre>
 <footer class="footer"><div class="wrap footer-bottom"><span>© 2026 wayhug.com</span><span>许可全文 · MIT</span></div></footer>"##,
         header = header(),
     );
-    shell("MIT 许可 · Wayhug", "Wayhug 故事、动画与纪念证书的 MIT 免费授权说明", &body, "", "")
+    shell("MIT 许可 · Wayhug", "Wayhug 故事、动画与纪念证书的 MIT 免费授权说明", &body, "", "<script src=\"/js/autosave.js\" defer></script>")
 }
 
 pub fn verify_page(cfg: &Config, req: &Request, story_exists: bool) -> String {
@@ -639,7 +640,7 @@ pub fn verify_page(cfg: &Config, req: &Request, story_exists: bool) -> String {
         story_id = esc(&req.story_id),
         missing = if story_exists { "" } else { "（作品已下架）" },
     );
-    shell("证书校验 · Wayhug", "校验 Wayhug 纪念证书编号与免费授权期", &body, "", "")
+    shell("证书校验 · Wayhug", "校验 Wayhug 纪念证书编号与免费授权期", &body, "", "<script src=\"/js/autosave.js\" defer></script>")
 }
 
 pub fn studio_page(cfg: &Config) -> String {
@@ -723,7 +724,7 @@ pub fn studio_page(cfg: &Config) -> String {
         "Wayhug 后台工作台",
         &body,
         "",
-        &format!("<script>{}</script>", STUDIO_JS),
+        &format!("<script src=\"/js/autosave.js\" defer></script><script>{}</script>", STUDIO_JS),
     )
 }
 
@@ -740,5 +741,5 @@ pub fn error_page(code: u16, message: &str) -> String {
         code = code,
         message = esc(message)
     );
-    shell(&format!("{} · Wayhug", message), message, &body, "", "")
+    shell(&format!("{} · Wayhug", message), message, &body, "", "<script src=\"/js/autosave.js\" defer></script>")
 }

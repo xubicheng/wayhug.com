@@ -18,16 +18,37 @@ use crate::story::{demo_text, parse_story, story_to_json};
 use crate::worldview;
 use axum::body::{Body, Bytes};
 use axum::extract::{DefaultBodyLimit, Multipart, Path, Query, State};
-use axum::http::{header, HeaderMap, StatusCode};
+use axum::http::{header, HeaderMap, HeaderValue, Method, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use serde::Deserialize;
 use serde_json::{json, Value};
 use std::collections::HashMap;
+use std::fs;
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::Mutex;
+
+const PUBLIC_DIR: &str = "public";
+
+fn mime_of(path: &str) -> &'static str {
+    let p = path.to_ascii_lowercase();
+    if p.ends_with(".html") || p.ends_with(".htm") { "text/html; charset=utf-8" }
+    else if p.ends_with(".css") { "text/css; charset=utf-8" }
+    else if p.ends_with(".js") { "application/javascript; charset=utf-8" }
+    else if p.ends_with(".json") { "application/json; charset=utf-8" }
+    else if p.ends_with(".svg") { "image/svg+xml" }
+    else if p.ends_with(".png") { "image/png" }
+    else if p.ends_with(".jpg") || p.ends_with(".jpeg") { "image/jpeg" }
+    else if p.ends_with(".gif") { "image/gif" }
+    else if p.ends_with(".ico") { "image/x-icon" }
+    else if p.ends_with(".txt") { "text/plain; charset=utf-8" }
+    else if p.ends_with(".xml") { "application/xml; charset=utf-8" }
+    else if p.ends_with(".pdf") { "application/pdf" }
+    else { "application/octet-stream" }
+}
 
 #[derive(Clone)]
 pub struct AppState {
@@ -235,7 +256,23 @@ async fn redirect_verify(Path(id): Path<String>) -> Response {
     redirect(&format!("/verify/{}", id))
 }
 
-async fn not_found() -> Response {
+async fn not_found(method: Method, uri: axum::http::Uri) -> Response {
+    let path = uri.path();
+    let rel = path.trim_start_matches('/');
+    let safe = !rel.is_empty()
+        && !rel.split('/').any(|seg| seg.is_empty() || seg == "." || seg == "..");
+    if safe && matches!(method, Method::GET | Method::HEAD) {
+        let file: PathBuf = [PUBLIC_DIR, rel].iter().collect();
+        if file.is_file() {
+            if let Ok(bytes) = fs::read(&file) {
+                let mut res = Response::new(Body::from(bytes));
+                let h = res.headers_mut();
+                h.insert(header::CONTENT_TYPE, HeaderValue::from_str(mime_of(rel)).unwrap());
+                h.insert(header::CACHE_CONTROL, HeaderValue::from_str("public, max-age=3600").unwrap());
+                return res;
+            }
+        }
+    }
     (
         StatusCode::NOT_FOUND,
         html_page(pages::error_page(404, "页面不存在")),
