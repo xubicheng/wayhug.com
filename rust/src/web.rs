@@ -108,6 +108,7 @@ pub fn router(state: AppState) -> Router {
         .route("/favicon.svg", get(favicon))
         .route("/robots.txt", get(robots_txt))
         .route("/sitemap.xml", get(sitemap_xml))
+        .route("/llms.txt", get(llms_txt))
         .layer(DefaultBodyLimit::max(13 * 1024 * 1024))
         .route("/api/track", post(api_track))
         .route("/api/stats", get(api_stats))
@@ -221,22 +222,86 @@ async fn brand_logo() -> Response {
 
 /// robots.txt：允许全部爬虫，指定 sitemap
 async fn robots_txt() -> Response {
-    let body = "User-agent: *\nAllow: /\nSitemap: https://wayhug.com/sitemap.xml\n";
+    let body = r#"User-agent: *
+Allow: /
+Disallow: /api/
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://wayhug.com/sitemap.xml
+"#;
     ([(header::CONTENT_TYPE, "text/plain; charset=utf-8")], body).into_response()
 }
 
-/// sitemap.xml：列出核心页面，供搜索引擎与 AI 爬虫索引
-async fn sitemap_xml() -> Response {
-    let body = r#"<?xml version="1.0" encoding="UTF-8"?>
+/// sitemap.xml：动态列出所有页面 + 故事，供搜索引擎与 AI 爬虫索引
+async fn sitemap_xml(State(state): State<AppState>) -> Response {
+    let db = state.db.lock().await;
+    let mut xml = String::from(
+        r#"<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://wayhug.com/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
   <url><loc>https://wayhug.com/#watch</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://wayhug.com/#create</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://wayhug.com/#world</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://wayhug.com/license</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
-</urlset>"#;
-    ([(header::CONTENT_TYPE, "application/xml; charset=utf-8")], body).into_response()
+  <url><loc>https://wayhug.com/studio</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+"#,
+    );
+    for s in &db.stories {
+        xml.push_str(&format!(
+            "  <url><loc>https://wayhug.com/watch/{}</loc><lastmod>{}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>\n",
+            s.id,
+            if s.created_at.len() >= 10 { &s.created_at[..10] } else { &s.created_at }
+        ));
+        xml.push_str(&format!(
+            "  <url><loc>https://wayhug.com/watch2d/{}</loc><lastmod>{}</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>\n",
+            s.id,
+            if s.created_at.len() >= 10 { &s.created_at[..10] } else { &s.created_at }
+        ));
+    }
+    xml.push_str("</urlset>");
+    ([(header::CONTENT_TYPE, "application/xml; charset=utf-8")], xml).into_response()
 }
+async fn llms_txt() -> Response {
+    let body = r#"wayhug — 把故事变成会动的图片
+Site / 站点: https://wayhug.com
+Languages / 语言: 简体中文
+Contact / 联系: bc.xu@hotmail.com
+Author / 作者: 王元会
+
+wayhug.com 是一个将"故事"变成"无声 IP 动图"的实验站。
+用户输入一段文字或上传自己的故事，系统自动生成一段带字幕的动画短片，
+支持 3D 和 2D 两种风格。这不是短视频平台，也不是社交网络，
+而是"让故事被看见"的一种新方式——让人先"看到"别人的故事，
+才有可能愿意"线下会面"。
+
+## 索引范围 / What to index
+- 首页及 hash 锚点（#watch 看故事 / #create 写故事 / #world 世界观）
+- 每个故事页：/watch/{id}（3D 动画）和 /watch2d/{id}（2D 动画）
+- /studio 工作室入口、/license 授权说明
+- 不索引 /api/ 下所有端点（仅用于前端数据获取和生成接口）
+
+## 故事列表 / Story list
+- 通过 https://wayhug.com/api/stories 获取完整故事列表
+
+## 技术说明 / Technical notes
+- 动画渲染: Blender 3.x + Python pipeline
+- 字幕合成: ffmpeg
+- 生成接口 /api/generate 需要登录或邀请码
+
+## 授权 / License
+- 商业使用前请访问 https://wayhug.com/license 确认
+"#;
+    ([(header::CONTENT_TYPE, "text/plain; charset=utf-8")], body).into_response()
+}
+
 async fn redirect_mail() -> Response {
     redirect("/#mail")
 }
@@ -864,7 +929,7 @@ async fn api_stats(State(state): State<AppState>) -> Response {
     let s = state.analytics.summary(7);
     Json(json!({"ok": true, "window": s.window_days, "today": s.today, "total": s.total,
         "paths": s.recent_paths, "events": s.recent_events,
-        "dir_bytes": s.dir_bytes, "disk_usage_pct": s.disk_usage_pct})).into_response()
+        "dir_bytes": s.dir_bytes, "disk_usage_pct": s.disk_usage_pct, "trending": s.trending, "project_split": s.project_split})).into_response()
 }
 
 async fn api_maintenance(State(state): State<AppState>) -> Response {
