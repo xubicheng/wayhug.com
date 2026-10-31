@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S4 IP 体验权门户 · Wayhug IP Lab</title>
+<meta name="description" content="在线申请 TXT→动物动画的 IP 体验权：生成编号证书，自动邮件发送 A4 PDF，或由站长人工答复。">
+<link rel="stylesheet" href="/lab/lab.css">
+</head>
+<body>
+<header class="nav">
+  <a class="brand" href="/lab/"><span class="mark">W</span> Wayhug IP Lab</a>
+  <nav class="nav-links">
+    <a href="/lab/">总览</a>
+    <a href="/lab/s1">S1 展厅</a>
+    <a href="/lab/s2">S2 邮件站</a>
+    <a href="/lab/s3">S3 生成器</a>
+    <a href="/lab/s4" class="active">S4 体验权</a>
+  </nav>
+</header>
+
+<main class="wrap narrow">
+  <section class="hero">
+    <span class="kicker">SOLUTION 04 · IP EXPERIENCE PORTAL</span>
+    <h1>IP 体验权门户：<span class="hl">一张编号证书</span>，开始商业闭环</h1>
+    <p class="lead">
+      填写称呼与邮箱，选择一部作品，即可获得 90 天免费体验权。系统立即签发 A4 纪念证书；
+      若开启自动回复，证书会作为邮件附件送达，否则进入站长待办，由本人亲自回信。
+    </p>
+    <div class="tag-row">
+      <span class="tag hot">免费体验</span>
+      <span class="tag">编号可校验</span>
+      <span class="tag" data-lab="smtp">SMTP</span>
+      <span class="tag off">非独占 · 不可转让</span>
+    </div>
+  </section>
+
+  <div class="panel accent">
+    <form id="form">
+      <div class="form-row">
+        <div class="field">
+          <label for="name">你的称呼 *</label>
+          <input id="name" type="text" maxlength="40" placeholder="例如：林一" required>
+        </div>
+        <div class="field">
+          <label for="email">电子邮箱 *</label>
+          <input id="email" type="email" maxlength="120" placeholder="用于接收证书与答复" required>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="story">选择作品 *</label>
+        <select id="story"><option value="">加载中…</option></select>
+        <div class="hint">也可以在下方粘贴自己的 TXT，系统会先生成作品再签发证书。</div>
+      </div>
+
+      <div class="field">
+        <label for="txt">或粘贴你的 TXT 故事（可选）</label>
+        <textarea id="txt" style="min-height:110px" placeholder="首行可作标题；动物关键词：狐 / 鸮 / 兔 / 熊 / 猫"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="note">想对站长说的话（可选）</label>
+        <input id="note" type="text" maxlength="500" placeholder="用途、合作意向、希望的人工答复…">
+      </div>
+
+      <div class="field check">
+        <input id="consent" type="checkbox" required>
+        <label for="consent" style="font-weight:400;margin:0">
+          我理解这是<strong>免费、非独占、不可转让</strong>的 IP 体验权：可在线观看与展示该作品从 TXT 到动物动画的成果，
+          不构成著作权转让，商业使用需另行签署授权协议。
+        </label>
+      </div>
+
+      <div class="btn-row" style="margin-top:6px">
+        <button class="btn primary" id="submit" type="submit">签发体验权证书</button>
+        <a class="btn ghost" href="/lab/s3">先去生成一部作品</a>
+      </div>
+      <div class="note" id="msg" style="display:none"></div>
+    </form>
+  </div>
+
+  <div class="panel result" id="result">
+    <h3>证书已签发</h3>
+    <div class="big-id" id="r-id">WH-</div>
+    <dl class="kv">
+      <dt>持有人</dt><dd id="r-name">-</dd>
+      <dt>作品</dt><dd id="r-story">-</dd>
+      <dt>签发日期</dt><dd id="r-date">-</dd>
+      <dt>体验期至</dt><dd id="r-expire">-</dd>
+      <dt>邮件状态</dt><dd id="r-mail">-</dd>
+    </dl>
+    <div class="btn-row">
+      <a class="btn primary" id="r-cert" href="#" target="_blank">下载 A4 证书 PDF</a>
+      <a class="btn" id="r-anim" href="#" target="_blank">观看动画</a>
+      <a class="btn ghost" id="r-verify" href="#" target="_blank">在线校验</a>
+    </div>
+    <p class="small" id="r-tip"></p>
+  </div>
+
+  <h2>你的一封邮件，我的两个动作</h2>
+  <div class="grid cols-2">
+    <div class="panel">
+      <h3>动作 1 · 自动回 PDF</h3>
+      <p class="small">开启 <code>LAB_AUTO_REPLY=true</code> 后，证书生成即自动发送，适合规模化体验与自助下载。</p>
+    </div>
+    <div class="panel">
+      <h3>动作 2 · 人工答复</h3>
+      <p class="small">关闭自动回复时，申请表进入 <a href="/lab/admin">后台待办</a>；你在邮箱回复「回复 编号 内容」，系统代发答复与证书。</p>
+    </div>
+  </div>
+
+  <footer class="foot">
+    <span>wayhug.com · S4 IP 体验权门户</span>
+    <span>联系：<a data-lab="contact" href="mailto:bc.xu@hotmail.com">bc.xu@hotmail.com</a></span>
+  </footer>
+</main>
+
+<script src="/lab/lab.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const msg = $('msg');
+  const params = new URLSearchParams(location.search);
+
+  function showMsg(text, kind) {
+    msg.style.display = 'block';
+    msg.className = 'note ' + (kind || '');
+    msg.textContent = text;
+  }
+
+  async function loadStories() {
+    const sel = $('story');
+    try {
+      const res = await fetch('/lab/api/stories?limit=50');
+      const { data } = await res.json();
+      if (!data.length) {
+        sel.innerHTML = '<option value="">暂无作品（可在下方粘贴 TXT 生成）</option>';
+        return;
+      }
+      sel.innerHTML = data.map(s =>
+        `<option value="${LAB.esc(s.id)}">《${LAB.esc(s.title)}》 · ${s.stats.scenes} 幕 · ${LAB.fmtDate(s.createdAt)}</option>`).join('');
+      const wanted = params.get('story');
+      if (wanted && data.some(s => s.id === wanted)) sel.value = wanted;
+    } catch (e) {
+      sel.innerHTML = `<option value="">读取失败：${LAB.esc(e.message)}</option>`;
+    }
+  }
+
+  $('form').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const btn = $('submit');
+    const payload = {
+      name: $('name').value.trim(),
+      email: $('email').value.trim(),
+      storyId: $('story').value,
+      txt: $('txt').value.trim(),
+      note: $('note').value.trim(),
+      consent: $('consent').checked,
+      source: 's4-web',
+    };
+    if (!payload.storyId && !payload.txt) {
+      showMsg('请选择一部作品，或粘贴自己的 TXT 故事。', 'warn');
+      return;
+    }
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> 签发中…';
+    try {
+      const data = await LAB.post('/api/experience', payload);
+      const r = data.record;
+      $('result').classList.add('show');
+      $('r-id').textContent = r.id;
+      $('r-name').textContent = `${r.name} · ${r.email}`;
+      $('r-story').textContent = `《${r.storyTitle}》`;
+      $('r-date').textContent = LAB.fmtDate(r.createdAt);
+      $('r-expire').textContent = LAB.fmtDate(r.expiresAt);
+      $('r-mail').textContent = data.mail.ok
+        ? '已自动发送到你的邮箱（含 PDF 附件）'
+        : (data.mail.reason || '未自动发送，站长将人工答复');
+      $('r-cert').href = data.certUrl;
+      $('r-anim').href = data.animationUrl;
+      $('r-verify').href = data.verifyUrl;
+      $('r-tip').textContent = data.mail.ok
+        ? '没收到？请检查垃圾邮件，或直接回复邮件要求人工答复。'
+        : '证书已生成，可先下载；站长会尽快用 ' + (data.mail.mode === 'manual' ? '人工邮件' : '邮件') + ' 答复你。';
+      if (!data.mail.ok) {
+        showMsg('证书已生成，但自动邮件未发出。你可以先下载 PDF，或等待站长人工回信。', 'warn');
+      } else {
+        showMsg('已签发并发送，请查收邮箱。', 'ok');
+      }
+      $('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (e) {
+      showMsg(e.message, 'warn');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '签发体验权证书';
+    }
+  });
+
+  loadStories();
+  if (params.get('title')) $('note').placeholder = `关于《${params.get('title')}》：…`;
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200" role="img" aria-label="仙 · 小妖怪">
+  <metadata>Copyright (c) 2026 王元会 (wayhug.com) &lt;bc.xu@hotmail.com&gt;. All rights reserved. 原创矢量美术（四相·仙/小妖怪），仅用基本图元构造；不含第三方资产、不内嵌字体。SPDX-License-Identifier: MIT</metadata>
+  <rect x="55" y="168" width="90" height="5" fill="#339999"/>
+  <circle cx="100" cy="118" r="26" fill="#009999"/>
+  <circle cx="100" cy="90" r="21" fill="#66cccc"/>
+  <polygon points="88,72 82,52 96,64" fill="#009999"/>
+  <polygon points="112,72 118,52 104,64" fill="#009999"/>
+  <path d="M86 82 q5 -8 10 0" fill="none" stroke="#333333" stroke-width="3"/>
+  <path d="M104 82 q5 -8 10 0" fill="none" stroke="#333333" stroke-width="3"/>
+  <path d="M88 98 q12 12 24 0" fill="none" stroke="#333333" stroke-width="3"/>
+  <line x1="76" y1="116" x2="58" y2="134" stroke="#66cccc" stroke-width="5"/>
+  <circle cx="58" cy="134" r="5" fill="#ffffff"/>
+  <line x1="124" y1="116" x2="142" y2="134" stroke="#66cccc" stroke-width="5"/>
+  <circle cx="142" cy="134" r="5" fill="#ffffff"/>
+  <line x1="92" y1="142" x2="92" y2="155" stroke="#339999" stroke-width="5"/>
+  <line x1="108" y1="142" x2="108" y2="155" stroke="#339999" stroke-width="5"/>
+  <polygon points="38,64 44,56 50,64 44,72" fill="#ffffff"/>
+  <polygon points="156,74 162,66 168,74 162,82" fill="#ffffff"/>
+  <polygon points="34,140 40,132 46,140 40,148" fill="#ffffff"/>
+  <polygon points="158,146 164,138 170,146 164,154" fill="#ffffff"/>
+</svg>

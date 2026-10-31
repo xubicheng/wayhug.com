@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>站长后台 · Wayhug IP Lab</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="/lab/lab.css">
+</head>
+<body>
+<header class="nav">
+  <a class="brand" href="/lab/"><span class="mark">W</span> Wayhug IP Lab</a>
+  <nav class="nav-links">
+    <a href="/lab/">总览</a>
+    <a href="/lab/s1">S1</a>
+    <a href="/lab/s2">S2</a>
+    <a href="/lab/s3">S3</a>
+    <a href="/lab/s4">S4</a>
+  </nav>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <span class="kicker">ADMIN · MANUAL REPLY</span>
+    <h1>站长后台：<span class="hl">人工答复</span>与邮件轮询</h1>
+    <p class="lead">
+      后台令牌由 <code>LAB_ADMIN_TOKEN</code> 配置，仅用于本地或私有入口。待办里的每一条申请，
+      都可以在这里一次性回复，系统会连同 A4 证书一起发出。
+    </p>
+  </section>
+
+  <div class="panel">
+    <div class="form-row">
+      <div class="field" style="margin-bottom:10px">
+        <label for="token">后台令牌</label>
+        <input id="token" type="password" placeholder="粘贴 LAB_ADMIN_TOKEN">
+      </div>
+      <div class="field" style="margin-bottom:10px">
+        <label>&nbsp;</label>
+        <div class="btn-row" style="margin:0">
+          <button class="btn primary" id="btn-load">读取待办</button>
+          <button class="btn" id="btn-poll">手动轮询 IMAP</button>
+        </div>
+      </div>
+    </div>
+    <div class="tag-row" id="stats"><span class="tag off">未加载</span></div>
+    <div class="note" id="msg" style="display:none"></div>
+  </div>
+
+  <h2>体验申请</h2>
+  <div class="panel" style="overflow:auto">
+    <table class="table" id="list">
+      <thead><tr><th>证书编号</th><th>作品</th><th>持有人</th><th>邮箱</th><th>状态</th><th>操作</th></tr></thead>
+      <tbody><tr><td colspan="6" class="small">输入令牌后读取</td></tr></tbody>
+    </table>
+  </div>
+
+  <h2>人工答复</h2>
+  <div class="panel accent">
+    <div class="field">
+      <label for="reply-id">证书编号</label>
+      <input id="reply-id" type="text" placeholder="WH-20261027-AB12">
+    </div>
+    <div class="field">
+      <label for="reply-text">答复正文（会连同证书 PDF 发给访客）</label>
+      <textarea id="reply-text" style="min-height:130px" placeholder="你好，感谢体验《…》。关于你的问题……"></textarea>
+    </div>
+    <div class="btn-row" style="margin-top:0">
+      <button class="btn primary" id="btn-reply">发送答复</button>
+      <a class="btn ghost" id="reply-cert" href="#" target="_blank">查看证书</a>
+    </div>
+  </div>
+
+  <details class="panel" style="margin-top:18px">
+    <summary style="cursor:pointer;font-weight:600">本地联调：模拟一封投稿邮件</summary>
+    <div class="field" style="margin-top:14px">
+      <label for="t-from">发件人</label>
+      <input id="t-from" type="email" value="visitor@example.com">
+    </div>
+    <div class="field">
+      <label for="t-subject">主题</label>
+      <input id="t-subject" type="text" value="[WAYHUG] 测试故事">
+    </div>
+    <div class="field">
+      <label for="t-body">正文</label>
+      <textarea id="t-body" style="min-height:100px">小狐在窗边等一场雪。雪落下时，它把信折成一只纸兔。
+后来棉棉来了，说月亮已经把光借给了它们。</textarea>
+    </div>
+    <div class="btn-row" style="margin-top:0">
+      <button class="btn" id="btn-ingest">投递并处理</button>
+    </div>
+    <div class="note">该操作只验证解析 / 发信流程，不会收到真实邮件。</div>
+  </details>
+
+  <footer class="foot">
+    <span>wayhug.com · 后台（请勿公开令牌）</span>
+    <span>申请与证书存放于 data/lab.json</span>
+  </footer>
+</main>
+
+<script src="/lab/lab.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const msg = $('msg');
+  let token = sessionStorage.getItem('lab-token') || '';
+  $('token').value = token;
+
+  function showMsg(text, kind) {
+    msg.style.display = 'block';
+    msg.className = 'note ' + (kind || '');
+    msg.textContent = text;
+  }
+
+  async function api(path, options) {
+    const opt = options || {};
+    const res = await fetch('/lab' + path, {
+      ...opt,
+      headers: {
+        'Content-Type': 'application/json',
+        'x-lab-token': token,
+        ...(opt.headers || {}),
+      },
+      body: opt.body ? JSON.stringify(opt.body) : undefined,
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(json.message || `请求失败（${res.status}）`);
+    return json;
+  }
+
+  async function load() {
+    token = $('token').value.trim();
+    sessionStorage.setItem('lab-token', token);
+    if (!token) return showMsg('请先填写后台令牌（LAB_ADMIN_TOKEN）。', 'warn');
+    try {
+      const { data, stats } = await api('/api/admin/requests?limit=100');
+      $('stats').innerHTML =
+        `<span class="tag">作品 ${stats.stories}</span>` +
+        `<span class="tag hot">证书 ${stats.requests}</span>` +
+        `<span class="tag ${stats.pending ? 'soft' : 'on'}">待人工 ${stats.pending}</span>` +
+        `<span class="tag">已答复 ${stats.replied}</span>`;
+      const rows = data.map(r => `
+        <tr>
+          <td><code>${LAB.esc(r.id)}</code></td>
+          <td>《${LAB.esc(r.storyTitle)}》</td>
+          <td>${LAB.esc(r.name)}</td>
+          <td>${LAB.esc(r.email)}</td>
+          <td><span class="tag ${r.status === 'replied' ? 'on' : 'soft'}">${r.status === 'replied' ? '已答复' : '待答复'}</span></td>
+          <td><button class="btn sm" data-id="${LAB.esc(r.id)}">答复</button></td>
+        </tr>`).join('');
+      $('list').querySelector('tbody').innerHTML = rows || '<tr><td colspan="6" class="small">暂无申请</td></tr>';
+      $('list').querySelectorAll('button[data-id]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          $('reply-id').value = btn.dataset.id;
+          $('reply-cert').href = `/lab/cert/${encodeURIComponent(btn.dataset.id)}.pdf`;
+          $('reply-text').focus();
+          $('reply-text').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      });
+      showMsg(`读取成功：${data.length} 条记录。`, 'ok');
+    } catch (e) {
+      showMsg(e.message, 'warn');
+    }
+  }
+
+  $('btn-load').addEventListener('click', load);
+
+  $('btn-poll').addEventListener('click', async () => {
+    try {
+      const { data } = await api('/api/admin/poll', { method: 'POST' });
+      showMsg('轮询完成：' + JSON.stringify(data), 'ok');
+      load();
+    } catch (e) {
+      showMsg(e.message, 'warn');
+    }
+  });
+
+  $('btn-reply').addEventListener('click', async () => {
+    const id = $('reply-id').value.trim();
+    const text = $('reply-text').value.trim();
+    if (!id || !text) return showMsg('请填写证书编号与答复正文。', 'warn');
+    const btn = $('btn-reply');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> 发送中…';
+    try {
+      const { data } = await api('/api/admin/reply', { method: 'POST', body: { id, text } });
+      if (data.mail.ok) {
+        showMsg(`已发送给 ${data.request?.email || '访客'}。`, 'ok');
+      } else {
+        showMsg('未发出：' + (data.mail.reason || '未知原因') + '。可先复制答复内容到自己的邮箱发送。', 'warn');
+      }
+      load();
+    } catch (e) {
+      showMsg(e.message, 'warn');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '发送答复';
+    }
+  });
+
+  $('btn-ingest').addEventListener('click', async () => {
+    try {
+      const { data } = await api('/api/admin/ingest', {
+        method: 'POST',
+        body: { from: $('t-from').value.trim(), subject: $('t-subject').value.trim(), body: $('t-body').value },
+      });
+      showMsg('处理结果：' + JSON.stringify(data), data.ok ? 'ok' : 'warn');
+    } catch (e) {
+      showMsg(e.message, 'warn');
+    }
+  });
+
+  $('reply-id').addEventListener('input', () => {
+    const id = $('reply-id').value.trim();
+    $('reply-cert').href = id ? `/lab/cert/${encodeURIComponent(id)}.pdf` : '#';
+  });
+
+  if (token) load();
+})();
+</script>
+</body>
+</html>

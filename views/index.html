@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wayhug AI Engine · 控制台</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <h1><span class="logo">🦊</span>Wayhug AI Engine</h1>
+      <ul class="nav-links">
+        <li><a href="/" class="active">控制台</a></li>
+        <li><a href="/characters">角色</a></li>
+        <li><a href="/contents">内容</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="container">
+    <!-- 台词生成器 -->
+    <div class="card">
+      <div class="card-title">💬 台词生成器</div>
+
+      <div class="form-group">
+        <label>选择角色</label>
+        <div class="char-grid" id="charGrid">
+          <div class="empty" style="grid-column: 1/-1;">加载中...</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="topic">主题</label>
+        <input type="text" id="topic" placeholder="例如：秋天的落叶、读书的意义、友情..." value="秋天的落叶">
+      </div>
+
+      <div class="form-group">
+        <label for="mood">情绪</label>
+        <select id="mood">
+          <option value="">自动判断</option>
+          <option value="nostalgic">感慨</option>
+          <option value="joyful">喜悦</option>
+          <option value="thoughtful">思考</option>
+          <option value="warm">温暖</option>
+          <option value="curious">好奇</option>
+        </select>
+      </div>
+
+      <button class="btn" id="generateBtn" onclick="generateDialogue()">
+        ✨ 生成台词
+      </button>
+
+      <div id="result"></div>
+    </div>
+
+    <!-- 引擎信息 -->
+    <div class="card">
+      <div class="card-title">⚙️ 引擎信息</div>
+      <div id="engineInfo" style="color: var(--text-light); font-size: 0.9rem;">加载中...</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>Wayhug AI Engine MVP · MIT License © 2026 王元会</p>
+    <p>备案号：苏ICP备17031763号-6 · <a href="https://wayhug.com">wayhug.com</a></p>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    let selectedCharId = null;
+
+    async function loadCharacters() {
+      const res = await fetch('/api/characters');
+      const json = await res.json();
+      const grid = document.getElementById('charGrid');
+      grid.innerHTML = json.data.map(c => `
+        <div class="char-card" data-id="${c.id}" onclick="selectChar('${c.id}', this)">
+          <div class="char-emoji">${c.emoji}</div>
+          <div class="char-name">${c.name}</div>
+          <div class="char-species">${c.species}</div>
+        </div>
+      `).join('');
+      // 默认选第一个
+      if (json.data.length) selectChar(json.data[0].id, grid.querySelector('.char-card'));
+    }
+
+    function selectChar(id, el) {
+      selectedCharId = id;
+      document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+
+    async function generateDialogue() {
+      if (!selectedCharId) { alert('请先选择一个角色'); return; }
+      const topic = document.getElementById('topic').value.trim();
+      if (!topic) { alert('请输入主题'); return; }
+
+      const mood = document.getElementById('mood').value;
+      const btn = document.getElementById('generateBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loading"></span>生成中...';
+
+      try {
+        const res = await fetch('/api/dialogue/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ characterId: selectedCharId, topic, mood: mood || undefined })
+        });
+        const json = await res.json();
+        if (json.code === 0) {
+          const d = json.data;
+          document.getElementById('result').innerHTML = `
+            <div class="result-box">
+              <div class="result-char">${d.character.emoji} <strong>${d.character.name}</strong> · 情绪：${d.moodName}</div>
+              <div class="result-text">${d.text}</div>
+              <div class="result-meta">
+                <span>主题：${d.topic}</span>
+                <span>引擎：${d.engine}</span>
+                <a class="btn btn-outline" style="padding: 0.25rem 0.8rem; font-size: 0.8rem;" href="/contents/${d.id}/pdf" target="_blank">导出 PDF</a>
+              </div>
+            </div>
+          `;
+        } else {
+          alert('生成失败：' + json.message);
+        }
+      } catch (e) {
+        alert('网络错误：' + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '✨ 生成台词';
+      }
+    }
+
+    async function loadEngineInfo() {
+      const res = await fetch('/api/info');
+      const json = await res.json();
+      const d = json.data;
+      document.getElementById('engineInfo').innerHTML = `
+        <p><strong>${d.name}</strong> v${d.version} · License: ${d.license}</p>
+        <p>引擎类型：${d.engine} · 内置角色：${d.characters} 个</p>
+      `;
+    }
+
+    loadCharacters();
+    loadEngineInfo();
+  </script>
+</body>
+</html>

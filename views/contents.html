@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>内容列表 · Wayhug AI Engine</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <h1><span class="logo">🦊</span>Wayhug AI Engine</h1>
+      <ul class="nav-links">
+        <li><a href="/">控制台</a></li>
+        <li><a href="/characters">角色</a></li>
+        <li><a href="/contents" class="active">内容</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="card">
+      <div class="card-title">📜 已生成内容</div>
+      <div class="content-list" id="contentList">
+        <div class="empty">加载中...</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>Wayhug AI Engine MVP · MIT License © 2026 王元会</p>
+    <p>备案号：苏ICP备17031763号-6</p>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    async function loadContents() {
+      const res = await fetch('/api/contents?limit=50');
+      const json = await res.json();
+      const list = document.getElementById('contentList');
+      if (json.data.length === 0) {
+        list.innerHTML = '<div class="empty"><div class="empty-emoji">📝</div>暂无内容，去<a href="/">控制台</a>生成第一条吧</div>';
+        return;
+      }
+      list.innerHTML = json.data.map(c => `
+        <a class="content-item" href="/contents/${c.id}">
+          <div class="content-item-left">
+            <div class="content-item-title">${c.character?.emoji || ''} ${c.topic || c.title || '无主题'}</div>
+            <div class="content-item-meta">
+              ${c.character?.name || ''} · ${c.moodName || ''} · ${new Date(c.createdAt).toLocaleString('zh-CN')}
+            </div>
+          </div>
+          <span class="tag">${c.type || 'content'}</span>
+        </a>
+      `).join('');
+    }
+    loadContents();
+  </script>
+</body>
+</html>

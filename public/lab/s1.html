@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S1 静态 IP 展厅 · Wayhug IP Lab</title>
+<meta name="description" content="预生成的 TXT→CSS→HTML5 动物动画展厅，访客可邮件索取 A4 IP 体验权纪念证书。零运维方案。">
+<link rel="stylesheet" href="/lab/lab.css">
+</head>
+<body>
+<header class="nav">
+  <a class="brand" href="/lab/"><span class="mark">W</span> Wayhug IP Lab</a>
+  <nav class="nav-links">
+    <a href="/lab/">总览</a>
+    <a href="/lab/s1" class="active">S1 展厅</a>
+    <a href="/lab/s2">S2 邮件站</a>
+    <a href="/lab/s3">S3 生成器</a>
+    <a href="/lab/s4">S4 体验权</a>
+  </nav>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <span class="kicker">SOLUTION 01 · STATIC IP GALLERY</span>
+    <h1>静态 IP 展厅：<span class="hl">一次生成</span>，长期展示</h1>
+    <p class="lead">
+      运营者把 TXT 故事生成一部扁平化动物动画，发布在展厅；访客观看后发邮件即可索取 A4 体验权证书。
+      页面本身无数据库、无登录，可缓存、可静态托管，是最省心的品牌入口。
+    </p>
+    <div class="tag-row">
+      <span class="tag hot">零运维</span>
+      <span class="tag">纯 CSS 动画</span>
+      <span class="tag">SEO 友好</span>
+      <span class="tag">可邮件索取证书</span>
+    </div>
+  </section>
+
+  <h2>正在展映：《<span id="demo-title">小狐与月亮邮局</span>》</h2>
+  <div class="stage-frame">
+    <iframe id="demo-frame" src="/lab/story/demo" title="小狐与月亮邮局 · 动画" loading="lazy" allow="autoplay"></iframe>
+  </div>
+  <div class="tag-row" id="demo-meta">
+    <span class="tag">加载中…</span>
+  </div>
+
+  <h2>作品如何变成动画</h2>
+  <div class="pipe">
+    <div class="step"><b>TXT</b><span>原文入库</span></div>
+    <div class="step"><b>JSON</b><span>场景 / 角色 / 情绪</span></div>
+    <div class="step"><b>CSS</b><span>逐幕关键帧</span></div>
+    <div class="step"><b>HTML5</b><span>自包含一页</span></div>
+    <div class="step"><b>PDF</b><span>体验权证书</span></div>
+  </div>
+
+  <div class="grid cols-2">
+    <div class="panel">
+      <h3>下载三件套</h3>
+      <p class="small">生成的页面不依赖任何框架与外部资源，双击即可离线播放。</p>
+      <div class="btn-row">
+        <a class="btn sm" href="/lab/story/demo/html">下载 HTML</a>
+        <a class="btn sm" href="/lab/story/demo/css">下载 CSS</a>
+        <a class="btn sm" href="/lab/story/demo/json">下载 JSON</a>
+      </div>
+      <p class="small" style="margin-top:10px">原始文本：<a href="/lab/api/demo.txt">demo.txt</a>（约 600 字）</p>
+    </div>
+    <div class="panel">
+      <h3>索取 A4 纪念证书</h3>
+      <p class="small">证书证明你获得该作品「从 TXT 到动物动画」的 IP 体验权：免费、非独占、可展示。</p>
+      <div class="btn-row">
+        <a class="btn primary" id="mail-cert" href="mailto:bc.xu@hotmail.com">邮件索取证书</a>
+        <a class="btn" href="/lab/s4">在线填表申请</a>
+      </div>
+      <p class="small">自动回复未开启时，站长会人工回信。</p>
+    </div>
+  </div>
+
+  <h2>为什么它值得作为发展方向</h2>
+  <ul class="list">
+    <li><span>最低成本上线：生成后即静态页面，不依赖数据库与邮件服务。</span><span class="meta">运维成本 ≈ 0</span></li>
+    <li><span>内容可被搜索引擎收录，每部作品都是一个长期入口。</span><span class="meta">SEO / GEO</span></li>
+    <li><span>证书索取通过邮件完成，天然沉淀第一批真实体验者。</span><span class="meta">可验证需求</span></li>
+  </ul>
+  <div class="note warn">
+    局限：没有在线生成能力，也没有自动回信；每部新作品需运营者手动生成并发布。适合「少量精品 + 品牌展示」。
+  </div>
+
+  <footer class="foot">
+    <span>wayhug.com · S1 静态 IP 展厅</span>
+    <span>邮箱：<a data-lab="contact" href="mailto:bc.xu@hotmail.com">bc.xu@hotmail.com</a></span>
+  </footer>
+</main>
+
+<script src="/lab/lab.js"></script>
+<script>
+(async function () {
+  try {
+    const info = await LAB.info();
+    const demo = info.demo;
+    if (demo) {
+      document.getElementById('demo-title').textContent = demo.title;
+      document.getElementById('demo-frame').src = `/lab/story/${demo.id}`;
+      const cast = demo.cast.map(c => `${c.name}×${c.count}`).join(' · ');
+      document.getElementById('demo-meta').innerHTML =
+        `<span class="tag hot">${demo.stats.scenes} 幕</span>` +
+        `<span class="tag">${demo.stats.chars} 字符</span>` +
+        `<span class="tag">${cast}</span>` +
+        `<span class="tag">指纹 ${demo.fingerprint.slice(0, 8)}</span>` +
+        `<span class="tag">每幕 4.2 秒</span>`;
+      const subject = `[WAYHUG] ${demo.title}`;
+      const body = `你好，我想申请《${demo.title}》的 A4 纪念证书与 IP 体验权。\n\n我的称呼：\n我的用途（可选）：\n\n（请把证书 PDF 回复到本邮箱，谢谢）`;
+      document.getElementById('mail-cert').href = LAB.mailto(info.contactEmail, subject, body);
+    }
+    const mailLink = document.querySelector('.foot a[data-lab="contact"]');
+    if (mailLink) mailLink.href = `mailto:${info.contactEmail}`;
+  } catch (e) {
+    document.getElementById('demo-meta').innerHTML = '<span class="tag off">演示作品尚未生成，请刷新重试</span>';
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+{
+  "name": "wayhug-ai-engine",
+  "version": "0.1.0",
+  "description": "Wayhug.com 自有 AI 引擎 MVP - 基于分层架构的内容生成引擎（台词、角色、数据、PDF 交付）",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "seed": "node src/data/seed.js",
+    "lab:selftest": "node scripts/lab-selftest.mjs"
+  },
+  "keywords": [
+    "ai-engine",
+    "mvp",
+    "wayhug",
+    "content-generation",
+    "blog"
+  ],
+  "author": "王元会",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "express": "^4.21.0",
+    "fontkit": "^1.9.0",
+    "imapflow": "^1.7.8",
+    "mailparser": "^3.12.4",
+    "nodemailer": "^6.10.1",
+    "pdfkit": "^0.15.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
